@@ -1,283 +1,407 @@
-require("dotenv").config();
+const express = require('express');
+const admin = require('firebase-admin');
+const { spawn } = require('child_process');
+const cors = require('cors');
+const path = require('path');
+require('dotenv').config();
 
-const http = require("node:http");
-const fs = require("node:fs");
-const path = require("node:path");
-const { URL } = require("node:url");
+const app = express();
+const PORT = process.env.PORT || 3001;
 
-const PORT = Number(process.env.PORT) || 3001;
-const BODY_LIMIT = 65536;
+// Initialize Firebase Admin SDK
+const serviceAccount = require('./serviceAccountKey.json');
 
-let firebaseAdmin = null;
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: process.env.FIREBASE_DB_URL
+});
 
-function sendJson(res, status, body) {
-  const data = JSON.stringify(body);
-  res.writeHead(status, {
-    "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  });
-  res.end(data);
-}
+const db = admin.database();
 
-function readJsonBody(req, limit = BODY_LIMIT) {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    const chunks = [];
-    req.on("data", (chunk) => {
-      size += chunk.length;
-      if (size > limit) {
-        req.destroy();
-        reject(Object.assign(new Error("Payload too large"), { code: "LIMIT" }));
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => {
-      const raw = Buffer.concat(chunks).toString("utf8");
-      if (!raw.trim()) {
-        resolve({});
-        return;
-      }
-      try {
-        resolve(JSON.parse(raw));
-      } catch {
-        reject(Object.assign(new Error("Invalid JSON"), { code: "JSON" }));
-      }
-    });
-    req.on("error", reject);
-  });
-}
+app.use(cors());
+app.use(express.json());
 
-function getFirebaseAdmin() {
-  if (firebaseAdmin) return firebaseAdmin;
-  const admin = require("firebase-admin");
-  if (admin.apps.length > 0) {
-    firebaseAdmin = admin;
-    return admin;
-  }
-  const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (!credPath) return null;
-  const resolved = path.isAbsolute(credPath)
-    ? credPath
-    : path.join(process.cwd(), credPath);
-  if (!fs.existsSync(resolved)) return null;
-  const serviceAccount = JSON.parse(fs.readFileSync(resolved, "utf8"));
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-  firebaseAdmin = admin;
-  return admin;
-}
+// Path to C++ executable
+const CPP_EXECUTABLE = path.join(__dirname, '../cpp-service/build/calendar_service');
 
-function mapCreateUserError(err) {
-  const code = err.code || err.errorInfo?.code || "";
-  switch (code) {
-    case "auth/email-already-exists":
-      return { status: 409, message: "Email already in use", code };
-    case "auth/invalid-email":
-      return { status: 400, message: "Invalid email", code };
-    case "auth/weak-password":
-      return { status: 400, message: "Password is too weak", code };
-    default:
-      return { status: 500, message: "Could not create account", code: code || undefined };
-  }
-}
+const cpp = spawn(CPP_EXECUTABLE);
 
-async function signInWithPassword(email, password) {
-  const key = process.env.FIREBASE_WEB_API_KEY;
-  if (!key) {
-    const e = new Error("FIREBASE_WEB_API_KEY is not set");
-    e.code = "CONFIG";
-    throw e;
-  }
-  const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(key)}`;
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email,
-      password,
-      returnSecureToken: true,
-    }),
-  });
-  const data = await resp.json();
-  if (!resp.ok) {
-    const msg = data.error?.message || "Sign-in failed";
-    const e = new Error(msg);
-    e.firebaseMessage = msg;
-    throw e;
-  }
-  return {
-    idToken: data.idToken,
-    refreshToken: data.refreshToken,
-    expiresIn: data.expiresIn,
-    uid: data.localId,
-    email: data.email,
-  };
-}
+cpp.stderr.on('data', (data) => {
+  console.error('C++ Error:', data.toString());
+});
 
-function mapSignInError(firebaseMessage) {
-  const m = String(firebaseMessage || "");
-  if (
-    m.includes("EMAIL_NOT_FOUND") ||
-    m.includes("INVALID_PASSWORD") ||
-    m.includes("INVALID_LOGIN_CREDENTIALS") ||
-    m.includes("USER_DISABLED")
-  ) {
-    return { status: 401, message: "Invalid email or password" };
-  }
-  if (m.includes("INVALID_EMAIL")) {
-    return { status: 400, message: "Invalid email" };
-  }
-  if (m.includes("TOO_MANY_ATTEMPTS_TRY_LATER")) {
-    return { status: 429, message: "Too many attempts; try again later" };
-  }
-  return { status: 400, message: "Sign-in failed" };
-}
+let pendingResolvers = [];
 
-function parseCredentials(body) {
-  const email = typeof body.email === "string" ? body.email.trim() : "";
-  const password = typeof body.password === "string" ? body.password : "";
-  if (!email || !password) {
-    return { error: { status: 400, message: "email and password are required" } };
-  }
-  if (password.length < 6) {
-    return {
-      error: { status: 400, message: "password must be at least 6 characters" },
-    };
-  }
-  return { email, password };
-}
+cpp.stdout.on('data', (data) => {
+  const lines = data.toString().trim().split('\n');
 
-async function handleSignUp(req, res) {
-  const admin = getFirebaseAdmin();
-  if (!admin) {
-    sendJson(res, 503, {
-      error: "Auth service not configured",
-      hint: "Set GOOGLE_APPLICATION_CREDENTIALS to your Firebase service account JSON path (file must exist).",
-    });
-    return;
-  }
+  lines.forEach((line) => {
+    if (!line) return;
 
-  let body;
-  try {
-    body = await readJsonBody(req);
-  } catch (err) {
-    if (err.code === "LIMIT") {
-      sendJson(res, 413, { error: "Payload too large" });
-      return;
-    }
-    sendJson(res, 400, { error: "Invalid JSON body" });
-    return;
-  }
-
-  const parsed = parseCredentials(body);
-  if (parsed.error) {
-    sendJson(res, parsed.error.status, { error: parsed.error.message });
-    return;
-  }
-
-  try {
-    const user = await admin.auth().createUser({
-      email: parsed.email,
-      password: parsed.password,
-    });
-    sendJson(res, 201, { uid: user.uid, email: user.email });
-  } catch (err) {
-    const mapped = mapCreateUserError(err);
-    sendJson(res, mapped.status, {
-      error: mapped.message,
-      ...(mapped.code && { code: mapped.code }),
-    });
-  }
-}
-
-async function handleSignIn(req, res) {
-  if (!process.env.FIREBASE_WEB_API_KEY) {
-    sendJson(res, 503, {
-      error: "Sign-in not configured",
-      hint: "Set FIREBASE_WEB_API_KEY from Firebase Console → Project settings → General → Web API key.",
-    });
-    return;
-  }
-
-  let body;
-  try {
-    body = await readJsonBody(req);
-  } catch (err) {
-    if (err.code === "LIMIT") {
-      sendJson(res, 413, { error: "Payload too large" });
-      return;
-    }
-    sendJson(res, 400, { error: "Invalid JSON body" });
-    return;
-  }
-
-  const parsed = parseCredentials(body);
-  if (parsed.error) {
-    sendJson(res, parsed.error.status, { error: parsed.error.message });
-    return;
-  }
-
-  try {
-    const session = await signInWithPassword(parsed.email, parsed.password);
-    sendJson(res, 200, {
-      idToken: session.idToken,
-      refreshToken: session.refreshToken,
-      expiresIn: session.expiresIn,
-      user: { uid: session.uid, email: session.email },
-    });
-  } catch (err) {
-    if (err.code === "CONFIG") {
-      sendJson(res, 503, { error: err.message });
-      return;
-    }
-    const mapped = mapSignInError(err.firebaseMessage || err.message);
-    sendJson(res, mapped.status, { error: mapped.message });
-  }
-}
-
-async function handleRequest(req, res, url) {
-  if (req.method === "GET" && url.pathname === "/api/health") {
-    sendJson(res, 200, { ok: true, service: "the-pantheon-backend" });
-    return;
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/auth/sign-up") {
-    await handleSignUp(req, res);
-    return;
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/auth/sign-in") {
-    await handleSignIn(req, res);
-    return;
-  }
-
-  sendJson(res, 404, { error: "Not found" });
-}
-
-const server = http.createServer((req, res) => {
-  if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    });
-    res.end();
-    return;
-  }
-
-  const host = req.headers.host || `localhost:${PORT}`;
-  const url = new URL(req.url || "/", `http://${host}`);
-
-  handleRequest(req, res, url).catch((err) => {
-    console.error(err);
-    if (!res.headersSent) {
-      sendJson(res, 500, { error: "Internal server error" });
+    try {
+      const result = JSON.parse(line);
+      const resolve = pendingResolvers.shift();
+      if (resolve) resolve(result);
+    } catch (err) {
+      console.error('Invalid JSON from C++:', line);
     }
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Backend listening on http://localhost:${PORT}`);
+/**
+ * Call C++ service for business logic operations
+ */
+function callCppService(command, data = null) {
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify({ command, data });
+
+    pendingResolvers.push(resolve);
+
+    cpp.stdin.write(payload + '\n', (err) => {
+      if (err) {
+        pendingResolvers.pop();
+        reject(err);
+      }
+    });
+  });
+}
+
+/**
+ * Load all events from Firebase and sync with C++ service
+ */
+async function loadEventsToCppService() {
+  try {
+    const snapshot = await db.ref('events').once('value');
+    const eventsData = snapshot.val();
+
+    //console.log(eventsData);
+    
+    if (!eventsData) {
+      return { success: true, count: 0 };
+    }
+    
+    // Convert Firebase object to array
+    const eventsArray = Object.values(eventsData);
+
+    //console.log(eventsArray);
+    
+    // Load into C++ service
+    const result = await callCppService('load_events', { events: eventsArray });
+    console.log(result);
+    return result;
+  } catch (error) {
+    console.error('Error loading events to C++ service:', error);
+    throw error;
+  }
+}
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', service: 'fraternity-calendar-api' });
+});
+
+// ==================== EVENT CRUD ====================
+
+// Get all events
+app.get('/api/events', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_all_events');
+    console.log(result);
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting events:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single event
+app.get('/api/events/:id', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_event', { id: req.params.id });
+    
+    if (result.error) {
+      return res.status(404).json(result);
+    }
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error getting event:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create event
+app.post('/api/events', async (req, res) => {
+  try {
+    // Generate ID
+    const eventData = {
+      ...req.body,
+      id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+    
+    // Validate and process with C++ service
+    const result = await callCppService('create_event', eventData);
+    
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    
+    // Save to Firebase
+    await db.ref(`events/${eventData.id}`).set(result.event);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error creating event:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update event
+app.put('/api/events/:id', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    
+    const eventData = {
+      ...req.body,
+      id: req.params.id
+    };
+    
+    const result = await callCppService('update_event', eventData);
+    
+    if (result.error) {
+      return res.status(400).json(result);
+    }
+    
+    // Update in Firebase
+    await db.ref(`events/${req.params.id}`).update(result.event);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error updating event:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete event
+app.delete('/api/events/:id', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    
+    const result = await callCppService('delete_event', { id: req.params.id });
+    
+    if (result.success) {
+      await db.ref(`events/${req.params.id}`).remove();
+    }
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== EVENT TYPE QUERIES ====================
+
+app.get('/api/events/type/recruitment', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_recruitment_events');
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/events/type/philanthropy', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_philanthropy_events');
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/events/type/social', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_social_events');
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== FILTERING ====================
+
+app.get('/api/events/filter/location/:location', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('filter_by_location', { 
+      location: req.params.location 
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/events/filter/date-range', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const { start, end } = req.query;
+    const result = await callCppService('filter_by_date_range', { 
+      start: parseInt(start), 
+      end: parseInt(end) 
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/events/upcoming', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_upcoming_events');
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/events/public', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_public_events');
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/events/coordinator/:coordinatorId', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_events_by_coordinator', { 
+      coordinatorId: req.params.coordinatorId 
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== STATISTICS ====================
+
+app.get('/api/statistics', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_statistics');
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== RECRUITMENT SPECIFIC ====================
+
+app.get('/api/events/rush-round/:round', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('get_events_by_rush_round', { 
+      round: req.params.round 
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/events/:eventId/invite-pnm', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('add_pnm_to_event', {
+      eventId: req.params.eventId,
+      pnmId: req.body.pnmId
+    });
+    
+    if (result.success) {
+      await db.ref(`events/${req.params.eventId}`).update(result.event);
+    }
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/events/:eventId/record-attendance', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('record_pnm_attendance', {
+      eventId: req.params.eventId,
+      pnmId: req.body.pnmId
+    });
+    
+    if (result.success) {
+      await db.ref(`events/${req.params.eventId}`).update(result.event);
+    }
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== PHILANTHROPY SPECIFIC ====================
+
+app.post('/api/events/:eventId/donate', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('add_donation', {
+      eventId: req.params.eventId,
+      amount: req.body.amount
+    });
+    
+    if (result.success) {
+      await db.ref(`events/${req.params.eventId}`).update(result.event);
+    }
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== SOCIAL SPECIFIC ====================
+
+app.post('/api/events/:eventId/sell-ticket', async (req, res) => {
+  try {
+    await loadEventsToCppService();
+    const result = await callCppService('sell_ticket', {
+      eventId: req.params.eventId
+    });
+    
+    if (result.success) {
+      await db.ref(`events/${req.params.eventId}`).update(result.event);
+    }
+    
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Fraternity Calendar API running on port ${PORT}`);
+  console.log(`📁 C++ service path: ${CPP_EXECUTABLE}`);
 });

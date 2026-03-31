@@ -1,6 +1,6 @@
 interface Props {
-  view: string
-  setView: (v: any) => void
+  view: "month" | "week"
+  setView: (v: "month" | "week") => void
   currentDate: Date
   setCurrentDate: (d: Date) => void
 }
@@ -25,21 +25,49 @@ export default function CalendarHeader({
   }
 
   return (
-    <div className="flex justify-between items-center mb-4">
+    <div className="relative flex items-center mb-4">
+      {/* Left: arrows */}
       <div className="flex gap-2">
-        <button onClick={prevMonth}>◀</button>
-        <button onClick={nextMonth}>▶</button>
+        <button
+          onClick={prevMonth}
+          className="cursor-pointer px-2 py-1 border rounded hover:bg-gray-200"
+        >
+          ◀
+        </button>
+        <button
+          onClick={nextMonth}
+          className="cursor-pointer px-2 py-1 border rounded hover:bg-gray-200"
+        >
+          ▶
+        </button>
       </div>
 
-      <h2 className="text-lg font-bold">
-        {currentDate.toLocaleString("default", { month: "long" })}{" "}
-        {currentDate.getFullYear()}
-      </h2>
+      {/* Center: month label */}
+      <div className="absolute left-1/2 transform -translate-x-1/2">
+        <h2 className="text-lg font-bold text-center">
+          {currentDate.toLocaleString("default", { month: "long" })}{" "}
+          {currentDate.getFullYear()}
+        </h2>
+      </div>
 
-      <div className="flex gap-2">
-        <button onClick={() => setView("month")}>Month</button>
-        <button onClick={() => setView("week")}>Week</button>
-        <button onClick={() => setView("day")}>Day</button>
+      {/* Right: month/week toggle */}
+      <div className="flex gap-2 ml-auto">
+        <button
+          onClick={() => setView("month")}
+          className={`cursor-pointer px-2 py-1 border rounded ${
+            view === "month" ? "font-bold" : "font-normal hover:bg-gray-100"
+          }`}
+        >
+          Month
+        </button>
+        <button
+          onClick={() => setView("week")}
+          className={`cursor-pointer px-2 py-1 border rounded ${
+            view === "week" ? "font-bold" : "font-normal hover:bg-gray-100"
+          }`}
+        >
+          Week
+        </button>
       </div>
     </div>
   )
