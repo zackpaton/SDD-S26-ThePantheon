@@ -1,0 +1,10 @@
+node_modules/
+
+# Secrets (API keys, etc.)
+.env
+.env.*
+!.env.example
+
+# Firebase service account keys (do not commit; project `firebase.json` is not ignored)
+*firebase-adminsdk*.json
+serviceAccountKey.json
