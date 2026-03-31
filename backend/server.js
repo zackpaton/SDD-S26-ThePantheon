@@ -395,6 +395,10 @@ app.post('/api/events/:eventId/sell-ticket', async (req, res) => {
   }
 });
 
+// =============== LOGIN / REGISTRATION ================
+
+
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
