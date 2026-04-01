@@ -2,14 +2,16 @@
 #include <algorithm>
 #include <sstream>
 
+using json = nlohmann::json;
+
 Event::Event() 
     : id(""), title(""), description(""), date(0), startTime(0), endTime(0),
-      location(""), coordinatorId(""), expectedAttendees(0), isPublic(false) {}
+      location(""), coordinatorId("") {}
 
 Event::Event(const std::string& id, const std::string& title, const std::string& description,
              std::time_t date, const std::string& location, const std::string& coordinatorId)
     : id(id), title(title), description(description), date(date), startTime(0), endTime(0),
-      location(location), coordinatorId(coordinatorId), expectedAttendees(0), isPublic(false) {}
+      location(location), coordinatorId(coordinatorId) {}
 
 void Event::addAttendee(const std::string& userId) {
     if (!isAttending(userId)) {
@@ -38,10 +40,9 @@ json Event::toJson() const {
     j["endTime"] = static_cast<long long>(endTime);
     j["location"] = location;
     j["coordinatorId"] = coordinatorId;
-    j["expectedAttendees"] = expectedAttendees;
-    j["isPublic"] = isPublic;
     j["eventType"] = getEventType();
     j["attendeeIds"] = attendeeIds;
+    j["attendeeCount"] = attendeeIds.size();
     return j;
 }
 
@@ -54,14 +55,13 @@ void Event::fromJson(const json& j) {
     endTime = j.value("endTime", 0LL);
     location = j.value("location", "");
     coordinatorId = j.value("coordinatorId", "");
-    expectedAttendees = j.value("expectedAttendees", 0);
-    isPublic = j.value("isPublic", false);
     
     if (j.contains("attendeeIds")) {
         attendeeIds = j["attendeeIds"].get<std::vector<std::string>>();
     }
 }
 
+/*
 std::string Event::getEventDetails() const {
     std::stringstream ss;
     ss << getEventType() << " Event: " << title;
@@ -71,6 +71,8 @@ std::string Event::getEventDetails() const {
     ss << " (Expected: " << expectedAttendees << ", Attending: " << getActualAttendeeCount() << ")";
     return ss.str();
 }
+
+*/
 
 bool Event::isValid() const {
     return !id.empty() && !title.empty() && date > 0 && !coordinatorId.empty();

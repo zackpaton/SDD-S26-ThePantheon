@@ -81,9 +81,10 @@ async function loadEventsToCppService() {
     }
     
     // Convert Firebase object to array
-    const eventsArray = Object.values(eventsData);
+    const eventsArray = Object.values(eventsData)
+      .map(event => convertEventDates(event)); // ✅ convert dates here
 
-    //console.log(eventsArray);
+    console.log(eventsArray);
     
     // Load into C++ service
     const result = await callCppService('load_events', { events: eventsArray });
@@ -93,6 +94,23 @@ async function loadEventsToCppService() {
     console.error('Error loading events to C++ service:', error);
     throw error;
   }
+}
+
+function getEasternISO(date) {
+  return date.toLocaleString("sv-SE", {
+    timeZone: "America/New_York",
+    hour12: false
+  }).replace(" ", "T") + "-04:00"; // EDT offset
+}
+
+// Helper to convert ISO string dates to Unix timestamps
+function convertEventDates(event) {
+  return {
+    ...event,
+    date: event.date ? Math.floor(new Date(event.date).getTime() / 1000) : null,
+    startTime: event.startTime ? Math.floor(new Date(event.startTime).getTime() / 1000) : null,
+    endTime: event.endTime ? Math.floor(new Date(event.endTime).getTime() / 1000) : null
+  };
 }
 
 // Health check
@@ -105,7 +123,6 @@ app.get('/health', (req, res) => {
 // Get all events
 app.get('/api/events', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_all_events');
     console.log(result);
     res.json(result);
@@ -118,7 +135,6 @@ app.get('/api/events', async (req, res) => {
 // Get single event
 app.get('/api/events/:id', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_event', { id: req.params.id });
     
     if (result.error) {
@@ -135,23 +151,28 @@ app.get('/api/events/:id', async (req, res) => {
 // Create event
 app.post('/api/events', async (req, res) => {
   try {
-    // Generate ID
+    // 1️⃣ Generate ID
     const eventData = {
       ...req.body,
       id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
-    
-    // Validate and process with C++ service
-    const result = await callCppService('create_event', eventData);
-    
+
+    // 2️⃣ Convert dates ONLY for C++ (Unix timestamps)
+    const convertedEvent = convertEventDates(eventData);
+
+    // 3️⃣ Send to C++ service
+    const result = await callCppService('create_event', convertedEvent);
+
     if (result.error) {
       return res.status(400).json(result);
     }
-    
-    // Save to Firebase
-    await db.ref(`events/${eventData.id}`).set(result.event);
-    
+
+    // 4️⃣ Save ORIGINAL (ISO strings) to Firebase
+    await db.ref(`events/${eventData.id}`).set(eventData);
+
+    // 5️⃣ Return response
     res.json(result);
+
   } catch (error) {
     console.error('Error creating event:', error);
     res.status(500).json({ error: error.message });
@@ -161,7 +182,6 @@ app.post('/api/events', async (req, res) => {
 // Update event
 app.put('/api/events/:id', async (req, res) => {
   try {
-    await loadEventsToCppService();
     
     const eventData = {
       ...req.body,
@@ -187,7 +207,6 @@ app.put('/api/events/:id', async (req, res) => {
 // Delete event
 app.delete('/api/events/:id', async (req, res) => {
   try {
-    await loadEventsToCppService();
     
     const result = await callCppService('delete_event', { id: req.params.id });
     
@@ -206,7 +225,6 @@ app.delete('/api/events/:id', async (req, res) => {
 
 app.get('/api/events/type/recruitment', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_recruitment_events');
     res.json(result);
   } catch (error) {
@@ -216,7 +234,6 @@ app.get('/api/events/type/recruitment', async (req, res) => {
 
 app.get('/api/events/type/philanthropy', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_philanthropy_events');
     res.json(result);
   } catch (error) {
@@ -226,7 +243,6 @@ app.get('/api/events/type/philanthropy', async (req, res) => {
 
 app.get('/api/events/type/social', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_social_events');
     res.json(result);
   } catch (error) {
@@ -238,7 +254,6 @@ app.get('/api/events/type/social', async (req, res) => {
 
 app.get('/api/events/filter/location/:location', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('filter_by_location', { 
       location: req.params.location 
     });
@@ -250,7 +265,6 @@ app.get('/api/events/filter/location/:location', async (req, res) => {
 
 app.get('/api/events/filter/date-range', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const { start, end } = req.query;
     const result = await callCppService('filter_by_date_range', { 
       start: parseInt(start), 
@@ -264,7 +278,6 @@ app.get('/api/events/filter/date-range', async (req, res) => {
 
 app.get('/api/events/upcoming', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_upcoming_events');
     res.json(result);
   } catch (error) {
@@ -274,7 +287,6 @@ app.get('/api/events/upcoming', async (req, res) => {
 
 app.get('/api/events/public', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_public_events');
     res.json(result);
   } catch (error) {
@@ -284,7 +296,6 @@ app.get('/api/events/public', async (req, res) => {
 
 app.get('/api/events/coordinator/:coordinatorId', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_events_by_coordinator', { 
       coordinatorId: req.params.coordinatorId 
     });
@@ -298,7 +309,6 @@ app.get('/api/events/coordinator/:coordinatorId', async (req, res) => {
 
 app.get('/api/statistics', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_statistics');
     res.json(result);
   } catch (error) {
@@ -310,7 +320,6 @@ app.get('/api/statistics', async (req, res) => {
 
 app.get('/api/events/rush-round/:round', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('get_events_by_rush_round', { 
       round: req.params.round 
     });
@@ -322,7 +331,6 @@ app.get('/api/events/rush-round/:round', async (req, res) => {
 
 app.post('/api/events/:eventId/invite-pnm', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('add_pnm_to_event', {
       eventId: req.params.eventId,
       pnmId: req.body.pnmId
@@ -340,7 +348,6 @@ app.post('/api/events/:eventId/invite-pnm', async (req, res) => {
 
 app.post('/api/events/:eventId/record-attendance', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('record_pnm_attendance', {
       eventId: req.params.eventId,
       pnmId: req.body.pnmId
@@ -360,7 +367,6 @@ app.post('/api/events/:eventId/record-attendance', async (req, res) => {
 
 app.post('/api/events/:eventId/donate', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('add_donation', {
       eventId: req.params.eventId,
       amount: req.body.amount
@@ -380,7 +386,6 @@ app.post('/api/events/:eventId/donate', async (req, res) => {
 
 app.post('/api/events/:eventId/sell-ticket', async (req, res) => {
   try {
-    await loadEventsToCppService();
     const result = await callCppService('sell_ticket', {
       eventId: req.params.eventId
     });
@@ -405,7 +410,14 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Fraternity Calendar API running on port ${PORT}`);
   console.log(`📁 C++ service path: ${CPP_EXECUTABLE}`);
+
+  try {
+    await loadEventsToCppService();
+    console.log("✅ Initial events loaded into C++ service");
+  } catch (err) {
+    console.error("❌ Failed initial load:", err);
+  }
 });
