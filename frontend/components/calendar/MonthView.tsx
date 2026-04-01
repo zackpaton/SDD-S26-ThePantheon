@@ -1,7 +1,8 @@
 "use client"
 
 import { generateMonthMatrix } from "@/lib/dateUtils"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import EventItem from "@/components/EventItem"
 
 interface Props {
   currentDate: Date
@@ -27,6 +28,57 @@ export default function MonthView({ currentDate }: Props) {
     }
   }
 
+  const [events, setEvents] = useState<any[]>([])
+  useEffect(() => {
+  const fetchEvents = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/api/events")
+      const data = await res.json()
+      setEvents(data)
+    } catch (err) {
+      console.error("Failed to fetch events:", err)
+    }
+  }
+
+  fetchEvents()
+
+  const interval = setInterval(fetchEvents, 5000) // every 5 seconds
+
+  return () => clearInterval(interval)
+}, [])
+
+  useEffect(() => {
+  console.log("Events loaded:", events)
+}, [events])
+
+  const getEventsForDay = (day: Date) => {
+    return events.filter((event) => {
+
+      console.log(event)
+      const eventDateUTC = new Date(event.date * 1000)
+
+      // Get timezone offset in seconds
+      const offsetSeconds = eventDateUTC.getTimezoneOffset() * 60
+
+      const eventDate = new Date((event.date + offsetSeconds) * 1000)
+      console.log(eventDate)
+      console.log("here")
+
+      const matchesDate =
+        eventDate.getFullYear() === day.getFullYear() &&
+        eventDate.getMonth() === day.getMonth() &&
+        eventDate.getDate() === day.getDate()
+
+      const matchesType =
+        eventTypes.length === 0 || eventTypes.includes(event.eventType)
+
+      const matchesLocation =
+        locations.length === 0 || locations.includes(event.location)
+
+      return matchesDate && matchesType && matchesLocation
+    })
+  }
+
   return (
     <div className="flex gap-6">
       {/* Calendar */}
@@ -42,9 +94,15 @@ export default function MonthView({ currentDate }: Props) {
             week.map((day, j) => (
               <div
                 key={`${i}-${j}`}
-                className="h-24 border rounded p-1 text-sm"
+                className="h-24 border rounded p-1 text-sm flex flex-col overflow-hidden"
               >
-                {day.getDate()}
+                <div className="text-xs font-semibold">{day.getDate()}</div>
+
+                <div className="flex-1 overflow-hidden">
+                  {getEventsForDay(day).map((event) => (
+                    <EventItem key={event.id} event={event} />
+                  ))}
+                </div>
               </div>
             ))
           )}

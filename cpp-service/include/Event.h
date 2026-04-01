@@ -7,7 +7,6 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
 
 /**
  * OOP PRINCIPLE: ENCAPSULATION
@@ -29,8 +28,6 @@ protected:  // INHERITANCE: Protected members accessible to derived classes
     std::time_t endTime;
     std::string location;
     std::string coordinatorId;  // ID of event coordinator
-    int expectedAttendees;
-    bool isPublic;  // Public to chapter members or open to potential recruits
     std::vector<std::string> attendeeIds;
 
 public:
@@ -53,9 +50,9 @@ public:
     std::time_t getEndTime() const { return endTime; }
     std::string getLocation() const { return location; }
     std::string getCoordinatorId() const { return coordinatorId; }
-    int getExpectedAttendees() const { return expectedAttendees; }
-    bool getIsPublic() const { return isPublic; }
     std::vector<std::string> getAttendeeIds() const { return attendeeIds; }
+    int getAttendeeCount() const { return attendeeIds.size(); }
+    
     
     // ENCAPSULATION: Setters provide controlled modification
     void setTitle(const std::string& t) { title = t; }
@@ -65,14 +62,11 @@ public:
     void setEndTime(std::time_t et) { endTime = et; }
     void setLocation(const std::string& loc) { location = loc; }
     void setCoordinatorId(const std::string& cId) { coordinatorId = cId; }
-    void setExpectedAttendees(int count) { expectedAttendees = count; }
-    void setIsPublic(bool pub) { isPublic = pub; }
     
     // Attendee management
     void addAttendee(const std::string& userId);
     void removeAttendee(const std::string& userId);
     bool isAttending(const std::string& userId) const;
-    int getActualAttendeeCount() const { return attendeeIds.size(); }
     
     /**
      * OOP PRINCIPLE: POLYMORPHISM
@@ -83,10 +77,10 @@ public:
      * in its JSON representation, while a PhilanthropyEvent includes
      * fundraising goals.
      */
-    virtual json toJson() const;
-    virtual void fromJson(const json& j);
+    virtual nlohmann::json toJson() const;
+    virtual void fromJson(const nlohmann::json& j);
     virtual std::string getEventType() const { return "General"; }
-    virtual std::string getEventDetails() const;
+    // virtual std::string getEventDetails() const;
     virtual bool isValid() const;
     
     // Clone for copying polymorphic objects

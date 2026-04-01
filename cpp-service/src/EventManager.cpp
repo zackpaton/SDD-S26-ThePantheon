@@ -5,6 +5,8 @@
 #include <string.h>
 #include <iostream>
 
+using json = nlohmann::json;
+
 EventManager::EventManager() {}
 
 EventManager::~EventManager() {
@@ -147,6 +149,8 @@ std::vector<std::shared_ptr<Event>> EventManager::getEventsByCoordinator(
     return result;
 }
 
+
+/*
 std::vector<std::shared_ptr<Event>> EventManager::getPublicEvents() const {
     std::vector<std::shared_ptr<Event>> result;
     for (const auto& pair : events) {
@@ -156,6 +160,8 @@ std::vector<std::shared_ptr<Event>> EventManager::getPublicEvents() const {
     }
     return result;
 }
+
+*/
 
 std::vector<std::shared_ptr<Event>> EventManager::getUpcomingEvents() const {
     std::time_t now = std::time(nullptr);
@@ -176,6 +182,7 @@ std::vector<std::shared_ptr<Event>> EventManager::getUpcomingEvents() const {
     return result;
 }
 
+/*
 std::vector<std::shared_ptr<RecruitmentEvent>> EventManager::getEventsByRushRound(
     const std::string& round) const {
     std::vector<std::shared_ptr<RecruitmentEvent>> result;
@@ -188,6 +195,7 @@ std::vector<std::shared_ptr<RecruitmentEvent>> EventManager::getEventsByRushRoun
     }
     return result;
 }
+
 
 std::vector<std::shared_ptr<RecruitmentEvent>> EventManager::getEventsForPNM(
     const std::string& pnmId) const {
@@ -234,6 +242,7 @@ std::vector<std::shared_ptr<PhilanthropyEvent>> EventManager::getActivePhilanthr
     }
     return result;
 }
+*/
 
 std::vector<std::shared_ptr<SocialEvent>> EventManager::getFormalEvents() const {
     std::vector<std::shared_ptr<SocialEvent>> result;
@@ -247,6 +256,7 @@ std::vector<std::shared_ptr<SocialEvent>> EventManager::getFormalEvents() const 
     return result;
 }
 
+/*
 std::vector<std::shared_ptr<SocialEvent>> EventManager::getAvailableTicketEvents() const {
     std::vector<std::shared_ptr<SocialEvent>> result;
     auto socialEvents = getSocialEvents();
@@ -258,6 +268,7 @@ std::vector<std::shared_ptr<SocialEvent>> EventManager::getAvailableTicketEvents
     }
     return result;
 }
+*/
 
 int EventManager::getEventCountByType(const std::string& type) const {
     int count = 0;
@@ -300,6 +311,7 @@ std::vector<std::string> EventManager::getValidationErrors(const Event& event) c
     }
     
     // Type-specific validation
+    /*
     if (auto recruitEvent = dynamic_cast<const RecruitmentEvent*>(&event)) {
         if (recruitEvent->getRushRound().empty()) {
             errors.push_back("Rush round is required for recruitment events");
@@ -322,6 +334,7 @@ std::vector<std::string> EventManager::getValidationErrors(const Event& event) c
             errors.push_back("Max capacity required for ticketed events");
         }
     }
+    */
     
     return errors;
 }
@@ -342,7 +355,10 @@ void EventManager::fromJson(const json& j) {
     if (j.is_array()) {
         for (const auto& eventJson : j) {
 
+
             auto event = createEventFromJson(eventJson);
+
+            std::cerr<<event->isValid()<<std::endl;
 
             if (event && event->isValid()) {
                 events[event->getId()] = event;
