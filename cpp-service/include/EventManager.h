@@ -10,8 +10,6 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
 /**
  * OOP PRINCIPLE: COMPOSITION & ENCAPSULATION
  * 
@@ -26,7 +24,7 @@ private:
     std::map<std::string, std::shared_ptr<Event>> events;
     
     // Helper method to create appropriate event type from JSON
-    std::shared_ptr<Event> createEventFromJson(const json& j);
+    std::shared_ptr<Event> createEventFromJson(const nlohmann::json& j);
 
 public:
     EventManager();
@@ -74,8 +72,8 @@ public:
     std::vector<std::string> getValidationErrors(const Event& event) const;
     
     // JSON serialization
-    json toJson() const;
-    void fromJson(const json& j);
+    nlohmann::json toJson() const;
+    void fromJson(const nlohmann::json& j);
     void clear();
 };
 

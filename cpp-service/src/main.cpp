@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+using json = nlohmann::json;
+
 EventManager globalManager;
 
 /**
@@ -182,14 +184,6 @@ void handleGetUpcomingEvents() {
     std::cout << result.dump() << std::endl;
 }
 
-void handleGetPublicEvents() {
-    auto events = globalManager.getPublicEvents();
-    json result = json::array();
-    for (const auto& event : events) {
-        result.push_back(event->toJson());
-    }
-    std::cout << result.dump() << std::endl;
-}
 
 void handleGetEventsByCoordinator(const json& input) {
     std::string coordinatorId = input["coordinatorId"];
@@ -201,24 +195,6 @@ void handleGetEventsByCoordinator(const json& input) {
     std::cout << result.dump() << std::endl;
 }
 
-void handleGetEventStatistics() {
-    auto stats = globalManager.getEventStatistics();
-    json result;
-    result["statistics"] = stats;
-    result["totalFundsRaised"] = globalManager.getTotalFundsRaised();
-    result["totalVolunteerHours"] = globalManager.getTotalVolunteerHours();
-    std::cout << result.dump() << std::endl;
-}
-
-void handleGetEventsByRushRound(const json& input) {
-    std::string round = input["round"];
-    auto events = globalManager.getEventsByRushRound(round);
-    json result = json::array();
-    for (const auto& event : events) {
-        result.push_back(event->toJson());
-    }
-    std::cout << result.dump() << std::endl;
-}
 
 void handleAddPNMToEvent(const json& input) {
     std::string eventId = input["eventId"];
@@ -240,7 +216,7 @@ void handleAddPNMToEvent(const json& input) {
         return;
     }
     
-    recruitEvent->invitePNM(pnmId);
+    // recruitEvent->invitePNM(pnmId);
     json result;
     result["success"] = true;
     result["event"] = recruitEvent->toJson();
@@ -267,7 +243,7 @@ void handleRecordPNMAttendance(const json& input) {
         return;
     }
     
-    recruitEvent->recordPNMAttendance(pnmId);
+    // recruitEvent->recordPNMAttendance(pnmId);
     json result;
     result["success"] = true;
     result["event"] = recruitEvent->toJson();
@@ -276,7 +252,7 @@ void handleRecordPNMAttendance(const json& input) {
 
 void handleAddDonation(const json& input) {
     std::string eventId = input["eventId"];
-    double amount = input["amount"];
+    // double amount = input["amount"];
     
     auto event = globalManager.getEvent(eventId);
     if (!event) {
@@ -294,13 +270,14 @@ void handleAddDonation(const json& input) {
         return;
     }
     
-    philEvent->addDonation(amount);
+    // philEvent->addDonation(amount);
     json result;
     result["success"] = true;
     result["event"] = philEvent->toJson();
     std::cout << result.dump() << std::endl;
 }
 
+/*
 void handleSellTicket(const json& input) {
     std::string eventId = input["eventId"];
     
@@ -331,6 +308,7 @@ void handleSellTicket(const json& input) {
         std::cout << error.dump() << std::endl;
     }
 }
+*/
 
 int main() {
     std::string line;
@@ -373,17 +351,17 @@ int main() {
             } else if (command == "get_upcoming_events") {
                 handleGetUpcomingEvents();
             } else if (command == "get_public_events") {
-                handleGetPublicEvents();
+                // handleGetPublicEvents();
             } else if (command == "get_events_by_coordinator") {
                 handleGetEventsByCoordinator(input);
             }
             // Statistics
             else if (command == "get_statistics") {
-                handleGetEventStatistics();
+                // handleGetEventStatistics();
             }
             // Recruitment-specific
             else if (command == "get_events_by_rush_round") {
-                handleGetEventsByRushRound(input);
+                // handleGetEventsByRushRound(input);
             } else if (command == "add_pnm_to_event") {
                 handleAddPNMToEvent(input);
             } else if (command == "record_pnm_attendance") {
@@ -395,7 +373,7 @@ int main() {
             }
             // Social-specific
             else if (command == "sell_ticket") {
-                handleSellTicket(input);
+                // handleSellTicket(input);
             }
             else {
                 json error;

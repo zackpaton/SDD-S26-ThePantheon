@@ -14,13 +14,7 @@ class PhilanthropyEvent : public Event {
 private:
     std::string beneficiary;  // Organization or cause being supported
     double fundraisingGoal;
-    double currentFunds;
-    std::string causeDescription;
-    int volunteerHoursGoal;
-    int volunteerHoursCompleted;
-    bool isPublicService;  // Open to public participation
-    std::string partnerOrganization;
-    std::vector<std::string> sponsors;
+    
     
 public:
     PhilanthropyEvent();
@@ -32,37 +26,20 @@ public:
     // Getters
     std::string getBeneficiary() const { return beneficiary; }
     double getFundraisingGoal() const { return fundraisingGoal; }
-    double getCurrentFunds() const { return currentFunds; }
-    std::string getCauseDescription() const { return causeDescription; }
-    int getVolunteerHoursGoal() const { return volunteerHoursGoal; }
-    int getVolunteerHoursCompleted() const { return volunteerHoursCompleted; }
-    bool getIsPublicService() const { return isPublicService; }
-    std::string getPartnerOrganization() const { return partnerOrganization; }
-    std::vector<std::string> getSponsors() const { return sponsors; }
     
     // Setters
     void setBeneficiary(const std::string& ben) { beneficiary = ben; }
     void setFundraisingGoal(double goal) { fundraisingGoal = goal; }
-    void setCauseDescription(const std::string& desc) { causeDescription = desc; }
-    void setVolunteerHoursGoal(int hours) { volunteerHoursGoal = hours; }
-    void setIsPublicService(bool isPublic) { isPublicService = isPublic; }
-    void setPartnerOrganization(const std::string& org) { partnerOrganization = org; }
     
-    // Fundraising operations
-    void addDonation(double amount);
-    void addVolunteerHours(int hours);
-    double getFundraisingProgress() const;  // Percentage
-    double getVolunteerProgress() const;    // Percentage
-    void addSponsor(const std::string& sponsor);
     
     /**
      * OOP PRINCIPLE: POLYMORPHISM
      * Override base class methods for philanthropy-specific behavior
      */
-    json toJson() const override;
-    void fromJson(const json& j) override;
+    nlohmann::json toJson() const override;
+    void fromJson(const nlohmann::json& j) override;
     std::string getEventType() const override { return "Philanthropy"; }
-    std::string getEventDetails() const override;
+    // std::string getEventDetails() const override;
     bool isValid() const override;
     std::shared_ptr<Event> clone() const override;
 };
