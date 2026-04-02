@@ -1,4 +1,4 @@
-export default function LoginPage() {
+export default function LoginForm() {
   return (
     <div className="flex items-center justify-center h-screen">
         <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
@@ -16,7 +16,7 @@ export default function LoginPage() {
             Forgot Password?
           </a>
           <br></br>
-          <a className="block align-baseline font-bold text-center text-purple-500 hover:text-purple-800" href="#">
+          <a className="block align-baseline font-bold text-center text-purple-500 hover:text-purple-800" href="sign-up">
             Don't have an account? <br></br>Sign up
           </a>
         </div>
