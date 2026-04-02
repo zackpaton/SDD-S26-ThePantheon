@@ -153,6 +153,32 @@ app.post('/api/users', async (req, res) => {
   }
 })
 
+// Update user profile
+app.put('/api/users/:uid', authenticate, async (req, res) => {
+  try {
+    const { uid } = req.params
+
+    // Optional: ensure the user can only update their own profile
+    if (req.user.uid !== uid) {
+      return res.status(403).json({ error: "Unauthorized to edit this profile" })
+    }
+
+    const updates = req.body
+
+    // Update only the fields provided in the request body
+    await db.ref(`users/${uid}`).update(updates)
+
+    // Return the updated user
+    const snapshot = await db.ref(`users/${uid}`).once('value')
+    const updatedUser = snapshot.val()
+
+    res.json(updatedUser)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: "Failed to update user" })
+  }
+})
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'fraternity-calendar-api' });

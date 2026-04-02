@@ -5,7 +5,10 @@ import { useEffect, useState } from "react"
 import { auth } from "@/lib/firebase"
 import EventItem from "@/components/EventItem"
 import AddEventModal from "@/components/AddEventModal"
+import EventDetailsModal from "@/components/EventDetailsModal"
+import EditEventModal from "@/components/EditEventModal"
 import { fraternities } from "@/data/fraternities"
+import { eventTypes as allEventTypes } from "@/data/eventTypes"
 
 export default function MonthView({ currentDate }: { currentDate: Date }) {
   const monthMatrix = generateMonthMatrix(currentDate)
@@ -34,7 +37,7 @@ export default function MonthView({ currentDate }: { currentDate: Date }) {
 
         const data = await res.json()
 
-        setUserRole(data.role) // "coordinator" or "guest"
+        setUserRole(data.role) // "Event Coordinator" or "Guest User"
         setUserFraternity(data.fraternity)
         setUserId(uid)
       } catch (err) {
@@ -52,20 +55,30 @@ export default function MonthView({ currentDate }: { currentDate: Date }) {
   // -----------------------------
   // Filters & Dropdowns
   // -----------------------------
-  const [eventTypes, setEventTypes] = useState<string[]>([])
-  const [locations, setLocations] = useState<string[]>([])
-  const [eventDropdownOpen, setEventDropdownOpen] = useState(false)
-  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false)
-  const [showModal, setShowModal] = useState(false)
+  const allFraternities = fraternities.map(f => f.name)
 
-  const allEventTypes = ["Meeting", "Holiday", "Birthday", "Workshop", "Other"]
-  const allLocations = ["Office", "Remote", "Home", "Client Site"]
+  const [eventTypes, setEventTypes] = useState<string[]>([...allEventTypes])
+  const [fraternitiesShown, setFraternitiesShown] = useState<string[]>([...allFraternities])
+  const [eventDropdownOpen, setEventDropdownOpen] = useState(false)
+  const [fraternityDropdownOpen, setFraternityDropdownOpen] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null)
+  const [showEventDetails, setShowEventDetails] = useState(false)
 
   const toggleItem = (item: string, selected: string[], setSelected: any) => {
     if (selected.includes(item)) {
       setSelected(selected.filter(i => i !== item))
     } else {
       setSelected([...selected, item])
+    }
+  }
+
+  const toggleAll = (allItems: string[], selected: string[], setSelected: any) => {
+    if (selected.length === allItems.length) {
+      setSelected([])
+    } else {
+      setSelected([...allItems])
     }
   }
 
@@ -111,13 +124,10 @@ export default function MonthView({ currentDate }: { currentDate: Date }) {
         eventDate.getMonth() === day.getMonth() &&
         eventDate.getDate() === day.getDate()
 
-      const matchesType =
-        eventTypes.length === 0 || eventTypes.includes(event.eventType)
+      const matchesType = eventTypes.includes(event.eventType)
+      const matchesFraternity = fraternitiesShown.includes(event.fraternity)
 
-      const matchesLocation =
-        locations.length === 0 || locations.includes(event.location)
-
-      return matchesDate && matchesType && matchesLocation
+      return matchesDate && matchesType && matchesFraternity
     })
   }
 
@@ -145,7 +155,14 @@ export default function MonthView({ currentDate }: { currentDate: Date }) {
                 <div className="flex-1 overflow-hidden">
                   {getEventsForDay(day).map((event) => {
                     const colorClass = event.color || "bg-gray-500"
-                    return <EventItem key={event.id} event={event} color={colorClass} />
+                    return (
+                      <EventItem
+                        key={event.id}
+                        event={event}
+                        color={colorClass}
+                        onClick={() => (setSelectedEvent(event), setShowEventDetails(true))} // <-- open the EventDetailsModal
+                      />
+                    )
                   })}
                 </div>
               </div>
@@ -156,89 +173,125 @@ export default function MonthView({ currentDate }: { currentDate: Date }) {
 
       {/* Sidebar */}
       <div className="w-56 flex flex-col gap-4 relative">
-        {/* Filters: only visible to guests */}
-        {userRole != "Event Coordinator" && (
-          <>
-            {/* Event Type Filter */}
-            <div className="flex flex-col text-sm font-medium relative">
+        {/* Event Type Filter */}
+        <div className="flex flex-col text-sm font-medium relative">
+          <button
+            onClick={() => setEventDropdownOpen(!eventDropdownOpen)}
+            className={`border rounded p-2 text-left flex justify-between items-center cursor-pointer hover:bg-gray-100
+              ${eventDropdownOpen ? "bg-gray-100" : "hover:bg-gray-100"}`}
+          >
+            {"Event Types"}
+            <span className="ml-2">▼</span>
+          </button>
+
+          {eventDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-1 border rounded bg-white shadow z-10 max-h-56 overflow-auto p-2">
               <button
-                onClick={() => setEventDropdownOpen(!eventDropdownOpen)}
-                className={`border rounded p-2 text-left flex justify-between items-center cursor-pointer hover:bg-gray-100
-                  ${eventDropdownOpen ? "bg-gray-100" : "hover:bg-gray-100"}`}
+                onClick={() => toggleAll(allEventTypes, eventTypes, setEventTypes)}
+                className="text-sm underline mb-2"
               >
-                {eventTypes.length ? eventTypes.join(", ") : "Event Type"}
-                <span className="ml-2">▼</span>
+                {eventTypes.length === allEventTypes.length ? "Unselect All" : "Select All"}
               </button>
-
-              {eventDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 border rounded bg-white shadow z-10 max-h-48 overflow-auto">
-                  {allEventTypes.map(type => (
-                    <label
-                      key={type}
-                      className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={eventTypes.includes(type)}
-                        onChange={() => toggleItem(type, eventTypes, setEventTypes)}
-                      />
-                      {type}
-                    </label>
-                  ))}
-                </div>
-              )}
+              {allEventTypes.map(type => (
+                <label
+                  key={type}
+                  className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={eventTypes.includes(type)}
+                    onChange={() => toggleItem(type, eventTypes, setEventTypes)}
+                  />
+                  {type}
+                </label>
+              ))}
             </div>
+          )}
+        </div>
 
-            {/* Location Filter */}
-            <div className="flex flex-col text-sm font-medium relative">
+        {/* Fraternity Filter */}
+        <div className="flex flex-col text-sm font-medium relative">
+          <button
+            onClick={() => setFraternityDropdownOpen(!fraternityDropdownOpen)}
+            className={`border rounded p-2 text-left flex justify-between items-center cursor-pointer
+              ${fraternityDropdownOpen ? "bg-gray-100" : "hover:bg-gray-100"}`}
+          >
+            {"Fraternities"}
+            <span className="ml-2">▼</span>
+          </button>
+
+          {fraternityDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-1 border rounded bg-white shadow z-10 max-h-56 overflow-auto p-2">
               <button
-                onClick={() => setLocationDropdownOpen(!locationDropdownOpen)}
-                className={`border rounded p-2 text-left flex justify-between items-center cursor-pointer
-                  ${locationDropdownOpen ? "bg-gray-100" : "hover:bg-gray-100"}`}
+                onClick={() => toggleAll(allFraternities, fraternitiesShown, setFraternitiesShown)}
+                className="text-sm underline mb-2"
               >
-                {locations.length ? locations.join(", ") : "Location"}
-                <span className="ml-2">▼</span>
+                {fraternitiesShown.length === allFraternities.length ? "Unselect All" : "Select All"}
               </button>
-
-              {locationDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 border rounded bg-white shadow z-10 max-h-48 overflow-auto">
-                  {allLocations.map(loc => (
-                    <label
-                      key={loc}
-                      className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={locations.includes(loc)}
-                        onChange={() => toggleItem(loc, locations, setLocations)}
-                      />
-                      {loc}
-                    </label>
-                  ))}
-                </div>
-              )}
+              {fraternities.map(f => (
+                <label
+                  key={f.name}
+                  className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={fraternitiesShown.includes(f.name)}
+                    onChange={() => toggleItem(f.name, fraternitiesShown, setFraternitiesShown)}
+                  />
+                  {f.name}
+                </label>
+              ))}
             </div>
-          </>
-        )}
+          )}
+        </div>
 
-        {/* Add Event Button: only visible to coordinators */}
+        {/* Add Event Button: only visible to coordinators at the bottom */}
         {userRole === "Event Coordinator" && (
           <button
-            onClick={() => setShowModal(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            onClick={() => setShowAddModal(true)}
+            className="mt-auto bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           >
-            + Add Event
+            Add Event
           </button>
         )}
       </div>
 
       {/* Add Event Modal */}
-      {showModal && userId && (
+      {showAddModal && userId && (
         <AddEventModal
-          onClose={() => setShowModal(false)}
+          onClose={() => setShowAddModal(false)}
           onCreate={fetchEvents}
           userFraternity={userFraternity}
           userId={userId}
+        />
+      )}
+
+      {selectedEvent && showEventDetails && userId && (
+        <EventDetailsModal
+          event={selectedEvent}
+          userRole={userRole}
+          userId={userId}
+          onClose={() => (setSelectedEvent(null), setShowEventDetails(false))}
+          onEdit={() => {
+            setShowEditModal(true) // Opens Add/Edit Event modal
+            setShowEventDetails(false)
+          }}
+        />
+      )}
+
+      {showEditModal && selectedEvent && (
+        <EditEventModal
+          event={selectedEvent}
+          onClose={() => {
+            setShowEditModal(false)
+            setShowEventDetails(true)
+          }}
+          onSave={() => {
+            fetchEvents() // refresh calendar
+            setShowEditModal(false)
+            setSelectedEvent(null)
+            setShowEventDetails(false)
+          }}
         />
       )}
     </div>

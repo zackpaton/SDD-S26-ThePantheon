@@ -1,9 +1,8 @@
 // /data/fraternities.ts
 export const fraternities = [
-  { name: "Sigma Chi", color: "bg-blue-500" },
+  { name: "Sigma Chi", color: "bg-yellow-500" },
   { name: "Phi Delta Theta", color: "bg-red-500" },
   { name: "Lambda Chi Alpha", color: "bg-green-500" },
-  { name: "Delta Tau Delta", color: "bg-yellow-500" },
   { name: "Kappa Sigma", color: "bg-purple-500" },
   { name: "Alpha Tau Omega", color: "bg-pink-500" },
   { name: "Pi Kappa Alpha", color: "bg-indigo-500" },
@@ -23,6 +22,7 @@ export const fraternities = [
   { name: "Pi Kappa Phi", color: "bg-yellow-600" },
   { name: "Phi Sigma Kappa", color: "bg-indigo-600" },
   { name: "Alpha Sigma Phi", color: "bg-purple-600" },
+  { name: "Delta Tau Delta", color: "bg-pink-600" },
 ]
 
 // Optional: create a fast lookup for EventItem colors

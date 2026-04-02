@@ -3,11 +3,16 @@
 import { useEffect, useState } from "react"
 import { auth } from "@/lib/firebase"
 import { onAuthStateChanged, signOut } from "firebase/auth"
+import EditProfileModal from "@/components/EditProfileModal"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
 
+  // -----------------------------
+  // Load user & profile
+  // -----------------------------
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
@@ -18,15 +23,10 @@ export default function ProfilePage() {
       setUser(currentUser)
 
       try {
-        // 🔥 Fetch profile from your backend (recommended)
         const token = await currentUser.getIdToken()
-
         const res = await fetch(`http://localhost:3001/api/users/${currentUser.uid}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         })
-
         const data = await res.json()
         setProfile(data)
       } catch (err) {
@@ -37,6 +37,9 @@ export default function ProfilePage() {
     return () => unsubscribe()
   }, [])
 
+  // -----------------------------
+  // Handle logout
+  // -----------------------------
   const handleLogout = async () => {
     try {
       await signOut(auth)
@@ -54,6 +57,15 @@ export default function ProfilePage() {
     )
   }
 
+  function DisplayValue({ value }: { value?: string | number | null }) {
+    const isEmpty = value === undefined || value === null || value === ""
+    return (
+      <span className={isEmpty ? "text-gray-400 italic" : ""}>
+        {isEmpty ? "N/A" : value}
+      </span>
+    )
+  }
+
   return (
     <div className="p-8 max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Profile</h1>
@@ -61,27 +73,27 @@ export default function ProfilePage() {
       <div className="bg-white shadow rounded p-6 flex flex-col gap-4">
         <div>
           <span className="font-semibold">First Name: </span>
-          {profile?.firstName || "N/A"}
+          <DisplayValue value={profile?.firstName} />
         </div>
 
         <div>
           <span className="font-semibold">Last Name: </span>
-          {profile?.lastName || "N/A"}
+          <DisplayValue value={profile?.lastName} />
         </div>
 
         <div>
           <span className="font-semibold">Class Year: </span>
-          {profile?.classYear || "N/A"}
+          <DisplayValue value={profile?.classYear} />
         </div>
 
         <div>
           <span className="font-semibold">Major: </span>
-          {profile?.major || "N/A"}
+          <DisplayValue value={profile?.major} />
         </div>
 
         <div>
           <span className="font-semibold">Interests: </span>
-          {profile?.interests || "N/A"}
+          <DisplayValue value={profile?.interests} />
         </div>
 
         <div>
@@ -89,13 +101,32 @@ export default function ProfilePage() {
           {user.email}
         </div>
 
-        <button
-          onClick={handleLogout}
-          className="mt-4 bg-red-500 text-white py-2 rounded hover:bg-red-600"
-        >
-          Logout
-        </button>
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => setShowEditModal(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Edit Profile
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          >
+            Logout
+          </button>
+        </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && profile && user && (
+        <EditProfileModal
+          profile={profile}
+          userId={user.uid}
+          onClose={() => setShowEditModal(false)}
+          onSave={(updatedProfile) => setProfile(updatedProfile)}
+        />
+      )}
     </div>
   )
 }
