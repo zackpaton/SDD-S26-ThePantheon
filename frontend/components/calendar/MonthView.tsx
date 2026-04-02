@@ -3,6 +3,7 @@
 import { generateMonthMatrix } from "@/lib/dateUtils"
 import { useEffect, useState } from "react"
 import EventItem from "@/components/EventItem"
+import AddEventModal from "@/components/AddEventModal"
 
 interface Props {
   currentDate: Date
@@ -19,6 +20,7 @@ export default function MonthView({ currentDate }: Props) {
 
   const allEventTypes = ["Meeting", "Holiday", "Birthday", "Workshop", "Other"]
   const allLocations = ["Office", "Remote", "Home", "Client Site"]
+  const [showModal, setShowModal] = useState(false)
 
   const toggleItem = (item: string, selected: string[], setSelected: any) => {
     if (selected.includes(item)) {
@@ -29,7 +31,6 @@ export default function MonthView({ currentDate }: Props) {
   }
 
   const [events, setEvents] = useState<any[]>([])
-  useEffect(() => {
   const fetchEvents = async () => {
     try {
       const res = await fetch("http://localhost:3001/api/events")
@@ -40,29 +41,35 @@ export default function MonthView({ currentDate }: Props) {
     }
   }
 
-  fetchEvents()
+  useEffect(() => {
+    fetchEvents()
 
-  const interval = setInterval(fetchEvents, 5000) // every 5 seconds
+    const interval = setInterval(fetchEvents, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
-  return () => clearInterval(interval)
-}, [])
+  const refreshEvents = async () => {
+    const res = await fetch("http://localhost:3001/api/events")
+    const data = await res.json()
+    setEvents(data)
+  }
 
   useEffect(() => {
-  console.log("Events loaded:", events)
+  //console.log("Events loaded:", events)
 }, [events])
 
   const getEventsForDay = (day: Date) => {
     return events.filter((event) => {
 
-      console.log(event)
+      //console.log(event)
       const eventDateUTC = new Date(event.date * 1000)
 
       // Get timezone offset in seconds
       const offsetSeconds = eventDateUTC.getTimezoneOffset() * 60
 
       const eventDate = new Date((event.date + offsetSeconds) * 1000)
-      console.log(eventDate)
-      console.log("here")
+      //console.log(eventDate)
+      //console.log("here")
 
       const matchesDate =
         eventDate.getFullYear() === day.getFullYear() &&
@@ -170,7 +177,22 @@ export default function MonthView({ currentDate }: Props) {
             </div>
           )}
         </div>
+        <div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            + Add Event
+          </button>
+        </div>
       </div>
+      {showModal && (
+            <AddEventModal
+              onClose={() => setShowModal(false)}
+              onCreate={fetchEvents}
+            />
+          )}
     </div>
+    
   )
 }
