@@ -20,7 +20,7 @@ public:
     PhilanthropyEvent();
     PhilanthropyEvent(const std::string& id, const std::string& title,
                       const std::string& description, std::time_t date,
-                      const std::string& location, const std::string& coordinatorId,
+                      const std::string& location, const std::string& coordinatorId, const std::string& fraternity,
                       const std::string& beneficiary, double fundraisingGoal);
     
     // Getters

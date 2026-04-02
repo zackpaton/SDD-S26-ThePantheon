@@ -22,7 +22,7 @@ public:
     RecruitmentEvent(const std::string& id, const std::string& title, 
                      const std::string& description, std::time_t date,
                      const std::string& location, const std::string& coordinatorId,
-                     bool isFormalRush);
+                     const std::string& fraternity, bool isFormalRush);
     
     // Getters
     bool getIsFormalRush() const { return isFormalRush; }

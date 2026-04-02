@@ -2,23 +2,69 @@
 
 import { generateMonthMatrix } from "@/lib/dateUtils"
 import { useEffect, useState } from "react"
+import { auth } from "@/lib/firebase"
 import EventItem from "@/components/EventItem"
+import AddEventModal from "@/components/AddEventModal"
+import EventDetailsModal from "@/components/EventDetailsModal"
+import EditEventModal from "@/components/EditEventModal"
+import { fraternities } from "@/data/fraternities"
+import { eventTypes as allEventTypes } from "@/data/eventTypes"
 
-interface Props {
-  currentDate: Date
-}
-
-export default function MonthView({ currentDate }: Props) {
+export default function MonthView({ currentDate }: { currentDate: Date }) {
   const monthMatrix = generateMonthMatrix(currentDate)
 
-  const [eventTypes, setEventTypes] = useState<string[]>([])
-  const [locations, setLocations] = useState<string[]>([])
+  // -----------------------------
+  // User state
+  // -----------------------------
+  const [userRole, setUserRole] = useState<"Event Coordinator" | "Guest User">("Guest User")
+  const [userFraternity, setUserFraternity] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const currentUser = auth.currentUser
+        if (!currentUser) return
+
+        const token = await currentUser.getIdToken()
+        const uid = currentUser.uid
+
+        const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        const data = await res.json()
+
+        setUserRole(data.role) // "Event Coordinator" or "Guest User"
+        setUserFraternity(data.fraternity)
+        setUserId(uid)
+      } catch (err) {
+        console.error("Failed to fetch user data:", err)
+      }
+    }
+
+    const unsubscribe = auth.onAuthStateChanged(() => {
+      fetchUserData()
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  // -----------------------------
+  // Filters & Dropdowns
+  // -----------------------------
+  const allFraternities = fraternities.map(f => f.name)
+
+  const [eventTypes, setEventTypes] = useState<string[]>([...allEventTypes])
+  const [fraternitiesShown, setFraternitiesShown] = useState<string[]>([...allFraternities])
   const [eventDropdownOpen, setEventDropdownOpen] = useState(false)
-  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false)
-
-  const allEventTypes = ["Meeting", "Holiday", "Birthday", "Workshop", "Other"]
-  const allLocations = ["Office", "Remote", "Home", "Client Site"]
+  const [fraternityDropdownOpen, setFraternityDropdownOpen] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null)
+  const [showEventDetails, setShowEventDetails] = useState(false)
 
   const toggleItem = (item: string, selected: string[], setSelected: any) => {
     if (selected.includes(item)) {
@@ -28,57 +74,66 @@ export default function MonthView({ currentDate }: Props) {
     }
   }
 
+  const toggleAll = (allItems: string[], selected: string[], setSelected: any) => {
+    if (selected.length === allItems.length) {
+      setSelected([])
+    } else {
+      setSelected([...allItems])
+    }
+  }
+
+  // -----------------------------
+  // Events state
+  // -----------------------------
   const [events, setEvents] = useState<any[]>([])
-  useEffect(() => {
+
   const fetchEvents = async () => {
     try {
       const res = await fetch("http://localhost:3001/api/events")
       const data = await res.json()
-      setEvents(data)
+
+      // Attach color dynamically based on fraternity
+      const coloredEvents = data.map((ev: any) => {
+        const frat = fraternities.find(f => f.name === ev.fraternity)
+        return {
+          ...ev,
+          color: frat ? frat.color : "bg-gray-500",
+        }
+      })
+
+      setEvents(coloredEvents)
     } catch (err) {
       console.error("Failed to fetch events:", err)
     }
   }
 
-  fetchEvents()
-
-  const interval = setInterval(fetchEvents, 5000) // every 5 seconds
-
-  return () => clearInterval(interval)
-}, [])
-
   useEffect(() => {
-  console.log("Events loaded:", events)
-}, [events])
+    fetchEvents()
+    const interval = setInterval(fetchEvents, 5000)
+    return () => clearInterval(interval)
+  }, [])
 
   const getEventsForDay = (day: Date) => {
     return events.filter((event) => {
-
-      console.log(event)
       const eventDateUTC = new Date(event.date * 1000)
-
-      // Get timezone offset in seconds
       const offsetSeconds = eventDateUTC.getTimezoneOffset() * 60
-
       const eventDate = new Date((event.date + offsetSeconds) * 1000)
-      console.log(eventDate)
-      console.log("here")
 
       const matchesDate =
         eventDate.getFullYear() === day.getFullYear() &&
         eventDate.getMonth() === day.getMonth() &&
         eventDate.getDate() === day.getDate()
 
-      const matchesType =
-        eventTypes.length === 0 || eventTypes.includes(event.eventType)
+      const matchesType = eventTypes.includes(event.eventType)
+      const matchesFraternity = fraternitiesShown.includes(event.fraternity)
 
-      const matchesLocation =
-        locations.length === 0 || locations.includes(event.location)
-
-      return matchesDate && matchesType && matchesLocation
+      return matchesDate && matchesType && matchesFraternity
     })
   }
 
+  // -----------------------------
+  // Render
+  // -----------------------------
   return (
     <div className="flex gap-6">
       {/* Calendar */}
@@ -97,11 +152,18 @@ export default function MonthView({ currentDate }: Props) {
                 className="h-24 border rounded p-1 text-sm flex flex-col overflow-hidden"
               >
                 <div className="text-xs font-semibold">{day.getDate()}</div>
-
                 <div className="flex-1 overflow-hidden">
-                  {getEventsForDay(day).map((event) => (
-                    <EventItem key={event.id} event={event} />
-                  ))}
+                  {getEventsForDay(day).map((event) => {
+                    const colorClass = event.color || "bg-gray-500"
+                    return (
+                      <EventItem
+                        key={event.id}
+                        event={event}
+                        color={colorClass}
+                        onClick={() => (setSelectedEvent(event), setShowEventDetails(true))} // <-- open the EventDetailsModal
+                      />
+                    )
+                  })}
                 </div>
               </div>
             ))
@@ -109,21 +171,27 @@ export default function MonthView({ currentDate }: Props) {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Sidebar */}
       <div className="w-56 flex flex-col gap-4 relative">
-        {/* Event Type */}
+        {/* Event Type Filter */}
         <div className="flex flex-col text-sm font-medium relative">
           <button
             onClick={() => setEventDropdownOpen(!eventDropdownOpen)}
             className={`border rounded p-2 text-left flex justify-between items-center cursor-pointer hover:bg-gray-100
               ${eventDropdownOpen ? "bg-gray-100" : "hover:bg-gray-100"}`}
           >
-            {eventTypes.length ? eventTypes.join(", ") : "Event Type"}
+            {"Event Types"}
             <span className="ml-2">▼</span>
           </button>
 
           {eventDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 border rounded bg-white shadow z-10 max-h-48 overflow-auto">
+            <div className="absolute top-full left-0 right-0 mt-1 border rounded bg-white shadow z-10 max-h-56 overflow-auto p-2">
+              <button
+                onClick={() => toggleAll(allEventTypes, eventTypes, setEventTypes)}
+                className="text-sm underline mb-2"
+              >
+                {eventTypes.length === allEventTypes.length ? "Unselect All" : "Select All"}
+              </button>
               {allEventTypes.map(type => (
                 <label
                   key={type}
@@ -141,36 +209,91 @@ export default function MonthView({ currentDate }: Props) {
           )}
         </div>
 
-        {/* Location */}
+        {/* Fraternity Filter */}
         <div className="flex flex-col text-sm font-medium relative">
           <button
-            onClick={() => setLocationDropdownOpen(!locationDropdownOpen)}
+            onClick={() => setFraternityDropdownOpen(!fraternityDropdownOpen)}
             className={`border rounded p-2 text-left flex justify-between items-center cursor-pointer
-              ${locationDropdownOpen ? "bg-gray-100" : "hover:bg-gray-100"}`}
+              ${fraternityDropdownOpen ? "bg-gray-100" : "hover:bg-gray-100"}`}
           >
-            {locations.length ? locations.join(", ") : "Location"}
+            {"Fraternities"}
             <span className="ml-2">▼</span>
           </button>
 
-          {locationDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 border rounded bg-white shadow z-10 max-h-48 overflow-auto">
-              {allLocations.map(loc => (
+          {fraternityDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-1 border rounded bg-white shadow z-10 max-h-56 overflow-auto p-2">
+              <button
+                onClick={() => toggleAll(allFraternities, fraternitiesShown, setFraternitiesShown)}
+                className="text-sm underline mb-2"
+              >
+                {fraternitiesShown.length === allFraternities.length ? "Unselect All" : "Select All"}
+              </button>
+              {fraternities.map(f => (
                 <label
-                  key={loc}
+                  key={f.name}
                   className="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 cursor-pointer"
                 >
                   <input
                     type="checkbox"
-                    checked={locations.includes(loc)}
-                    onChange={() => toggleItem(loc, locations, setLocations)}
+                    checked={fraternitiesShown.includes(f.name)}
+                    onChange={() => toggleItem(f.name, fraternitiesShown, setFraternitiesShown)}
                   />
-                  {loc}
+                  {f.name}
                 </label>
               ))}
             </div>
           )}
         </div>
+
+        {/* Add Event Button: only visible to coordinators at the bottom */}
+        {userRole === "Event Coordinator" && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="mt-auto bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Add Event
+          </button>
+        )}
       </div>
+
+      {/* Add Event Modal */}
+      {showAddModal && userId && (
+        <AddEventModal
+          onClose={() => setShowAddModal(false)}
+          onCreate={fetchEvents}
+          userFraternity={userFraternity}
+          userId={userId}
+        />
+      )}
+
+      {selectedEvent && showEventDetails && userId && (
+        <EventDetailsModal
+          event={selectedEvent}
+          userRole={userRole}
+          userId={userId}
+          onClose={() => (setSelectedEvent(null), setShowEventDetails(false))}
+          onEdit={() => {
+            setShowEditModal(true) // Opens Add/Edit Event modal
+            setShowEventDetails(false)
+          }}
+        />
+      )}
+
+      {showEditModal && selectedEvent && (
+        <EditEventModal
+          event={selectedEvent}
+          onClose={() => {
+            setShowEditModal(false)
+            setShowEventDetails(true)
+          }}
+          onSave={() => {
+            fetchEvents() // refresh calendar
+            setShowEditModal(false)
+            setSelectedEvent(null)
+            setShowEventDetails(false)
+          }}
+        />
+      )}
     </div>
   )
 }

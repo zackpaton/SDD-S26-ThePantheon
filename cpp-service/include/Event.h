@@ -28,12 +28,13 @@ protected:  // INHERITANCE: Protected members accessible to derived classes
     std::time_t endTime;
     std::string location;
     std::string coordinatorId;  // ID of event coordinator
+    std::string fraternity;
     std::vector<std::string> attendeeIds;
 
 public:
     Event();
     Event(const std::string& id, const std::string& title, const std::string& description,
-          std::time_t date, const std::string& location, const std::string& coordinatorId);
+          std::time_t date, const std::string& location, const std::string& coordinatorId, const std::string& fraternity);
     
     /**
      * OOP PRINCIPLE: POLYMORPHISM
@@ -50,6 +51,7 @@ public:
     std::time_t getEndTime() const { return endTime; }
     std::string getLocation() const { return location; }
     std::string getCoordinatorId() const { return coordinatorId; }
+    std::string getFraternity() const { return fraternity; }
     std::vector<std::string> getAttendeeIds() const { return attendeeIds; }
     int getAttendeeCount() const { return attendeeIds.size(); }
     
@@ -62,6 +64,7 @@ public:
     void setEndTime(std::time_t et) { endTime = et; }
     void setLocation(const std::string& loc) { location = loc; }
     void setCoordinatorId(const std::string& cId) { coordinatorId = cId; }
+    void setFraternity(const std::string& frat) { fraternity = frat; }
     
     // Attendee management
     void addAttendee(const std::string& userId);
@@ -79,7 +82,7 @@ public:
      */
     virtual nlohmann::json toJson() const;
     virtual void fromJson(const nlohmann::json& j);
-    virtual std::string getEventType() const { return "General"; }
+    virtual std::string getEventType() const { return "Other"; }
     // virtual std::string getEventDetails() const;
     virtual bool isValid() const;
     

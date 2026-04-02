@@ -113,6 +113,72 @@ function convertEventDates(event) {
   };
 }
 
+async function authenticate(req, res, next) {
+  const authHeader = req.headers.authorization
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized" })
+  }
+
+  const token = authHeader.split("Bearer ")[1]
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(token)
+    req.user = decoded // contains uid, email, etc.
+    next()
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" })
+  }
+}
+
+app.get('/api/users/:uid', authenticate, async (req, res) => {
+  try {
+    const snapshot = await db.ref(`users/${req.params.uid}`).once('value')
+    const userData = snapshot.val()
+
+    res.json(userData || {})
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: "Failed to fetch user" })
+  }
+})
+
+app.post('/api/users', async (req, res) => {
+  try {
+    const { uid, ...data } = req.body
+    await db.ref(`users/${uid}`).set(data)
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create user" })
+  }
+})
+
+// Update user profile
+app.put('/api/users/:uid', authenticate, async (req, res) => {
+  try {
+    const { uid } = req.params
+
+    // Optional: ensure the user can only update their own profile
+    if (req.user.uid !== uid) {
+      return res.status(403).json({ error: "Unauthorized to edit this profile" })
+    }
+
+    const updates = req.body
+
+    // Update only the fields provided in the request body
+    await db.ref(`users/${uid}`).update(updates)
+
+    // Return the updated user
+    const snapshot = await db.ref(`users/${uid}`).once('value')
+    const updatedUser = snapshot.val()
+
+    res.json(updatedUser)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: "Failed to update user" })
+  }
+})
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'fraternity-calendar-api' });
@@ -124,7 +190,7 @@ app.get('/health', (req, res) => {
 app.get('/api/events', async (req, res) => {
   try {
     const result = await callCppService('get_all_events');
-    console.log(result);
+    //console.log(result);
     res.json(result);
   } catch (error) {
     console.error('Error getting events:', error);
@@ -149,16 +215,20 @@ app.get('/api/events/:id', async (req, res) => {
 });
 
 // Create event
-app.post('/api/events', async (req, res) => {
+app.post('/api/events', authenticate, async (req, res) => {
   try {
     // 1️⃣ Generate ID
     const eventData = {
       ...req.body,
+      coordinatorId: req.user.uid,
       id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
 
+
     // 2️⃣ Convert dates ONLY for C++ (Unix timestamps)
     const convertedEvent = convertEventDates(eventData);
+
+    console.log(convertedEvent);
 
     // 3️⃣ Send to C++ service
     const result = await callCppService('create_event', convertedEvent);

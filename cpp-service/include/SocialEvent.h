@@ -21,7 +21,7 @@ public:
     SocialEvent(const std::string& id, const std::string& title,
                 const std::string& description, std::time_t date,
                 const std::string& location, const std::string& coordinatorId,
-                bool isFormal, int maxCapacity);
+                const std::string& fraternity, bool isFormal, int maxCapacity);
     
     // Getters
     bool getIsFormal() const { return isFormal; }

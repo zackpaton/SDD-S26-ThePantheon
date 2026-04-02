@@ -49,16 +49,19 @@ export default function Navbar() {
         {/* Nav Links */}
         <div className="flex gap-6">
           {navItems.map((item) => {
-            const isActive = pathname === item.path
+            let isActive = pathname === item.path
+
+            // Make "Login" active on both /login and /signup
+            if (item.name === "Login" && (pathname === "/login" || pathname === "/sign-up")) {
+              isActive = true
+            }
 
             return (
               <Link
                 key={item.name}
                 href={item.path}
                 className={`text-sm font-medium transition-colors ${
-                  isActive
-                    ? "text-white"
-                    : "text-black hover:text-blue-500"
+                  isActive ? "text-white" : "text-black hover:text-blue-500"
                 }`}
               >
                 {item.name}
