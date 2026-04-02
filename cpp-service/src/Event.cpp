@@ -6,12 +6,13 @@ using json = nlohmann::json;
 
 Event::Event() 
     : id(""), title(""), description(""), date(0), startTime(0), endTime(0),
-      location(""), coordinatorId("") {}
+      location(""), coordinatorId(""), fraternity("") {}
 
 Event::Event(const std::string& id, const std::string& title, const std::string& description,
-             std::time_t date, const std::string& location, const std::string& coordinatorId)
+             std::time_t date, const std::string& location, const std::string& coordinatorId,
+            const std::string& fraternity)
     : id(id), title(title), description(description), date(date), startTime(0), endTime(0),
-      location(location), coordinatorId(coordinatorId) {}
+      location(location), coordinatorId(coordinatorId), fraternity(fraternity) {}
 
 void Event::addAttendee(const std::string& userId) {
     if (!isAttending(userId)) {
@@ -40,6 +41,7 @@ json Event::toJson() const {
     j["endTime"] = static_cast<long long>(endTime);
     j["location"] = location;
     j["coordinatorId"] = coordinatorId;
+    j["fraternity"] = fraternity;
     j["eventType"] = getEventType();
     j["attendeeIds"] = attendeeIds;
     j["attendeeCount"] = attendeeIds.size();
@@ -55,6 +57,7 @@ void Event::fromJson(const json& j) {
     endTime = j.value("endTime", 0LL);
     location = j.value("location", "");
     coordinatorId = j.value("coordinatorId", "");
+    fraternity = j.value("fraternity", "");
     
     if (j.contains("attendeeIds")) {
         attendeeIds = j["attendeeIds"].get<std::vector<std::string>>();

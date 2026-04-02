@@ -35,55 +35,67 @@ export default function AddEventModal({ onClose, onCreate }: any) {
   }
 
   const handleSubmit = async () => {
-    try {
-      const convDate = `${form.date}T00:00:00-04:00`
-      const startISO = `${form.date}T${form.startTime}:00-04:00`
-      const endISO = `${form.date}T${form.endTime}:00-04:00`
+  try {
+    const convDate = `${form.date}T00:00:00-04:00`
+    const startISO = `${form.date}T${form.startTime}:00-04:00`
+    const endISO = `${form.date}T${form.endTime}:00-04:00`
 
-      let payload: any = {
-        title: form.title,
-        description: form.description,
-        location: form.location,
-        eventType: form.eventType,
-        date: convDate,
-        startTime: startISO,
-        endTime: endISO,
-        coordinatorId: "coord09",
-      }
+    // 🔹 Fetch coordinator profile from backend
+    const token = await auth.currentUser?.getIdToken()
+    const uid = auth.currentUser?.uid
 
-      // Add only relevant fields
-      if (form.eventType === "Recruitment") {
-        payload.isFormalRush = form.isFormalRush
-      }
+    const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    const coordinator = await res.json() // should include id and fraternity
 
-      if (form.eventType === "Philanthropy") {
-        payload.beneficiary = form.beneficiary
-        payload.fundraisingGoal = Number(form.fundraisingGoal)
-      }
+    let payload: any = {
+      title: form.title,
+      description: form.description,
+      location: form.location,
+      eventType: form.eventType,
+      date: convDate,
+      startTime: startISO,
+      endTime: endISO,
 
-      if (form.eventType === "Social") {
-        payload.isFormal = form.isFormal
-        payload.hasAlcohol = form.hasAlcohol
-        payload.maxCapacity = Number(form.maxCapacity)
-      }
+      // 🔹 Coordinator info
+      coordinatorId: coordinator.id,
+      fraternity: coordinator.fraternity,
+    }
 
-      const token = await auth.currentUser?.getIdToken()
+    // Add only relevant fields
+    if (form.eventType === "Recruitment") {
+      payload.isFormalRush = form.isFormalRush
+    }
+
+    if (form.eventType === "Philanthropy") {
+      payload.beneficiary = form.beneficiary
+      payload.fundraisingGoal = Number(form.fundraisingGoal)
+    }
+
+    if (form.eventType === "Social") {
+      payload.isFormal = form.isFormal
+      payload.hasAlcohol = form.hasAlcohol
+      payload.maxCapacity = Number(form.maxCapacity)
+    }
 
     await fetch("http://localhost:3001/api/events", {
-    method: "POST",
-    headers: {
+      method: "POST",
+      headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // 🔥 CRITICAL
-    },
-    body: JSON.stringify(payload),
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
     })
 
-      onCreate()
-      onClose()
-    } catch (err) {
-      console.error(err)
-    }
+    onCreate()
+    onClose()
+  } catch (err) {
+    console.error(err)
   }
+}
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">

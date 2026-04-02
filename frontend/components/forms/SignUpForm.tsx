@@ -4,6 +4,7 @@ import { useState } from "react"
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
+import { fraternities } from "@/data/fraternities"
 
 export default function SignUpForm() {
   const [firstName, setFirstName] = useState("")
@@ -143,14 +144,10 @@ export default function SignUpForm() {
               onChange={(e) => setFraternity(e.target.value)}
             >
 
-              <option value="" disabled hidden>
-                  Select Fraternity
-              </option>
-              <option>Sigma Chi</option>
-              <option>Phi Delta Theta</option>
-              <option>Lambda Chi Alpha</option>
-              <option>Delta Tau Delta</option>
-              <option>Other</option>
+              <option value="" disabled hidden>Select Fraternity</option>
+              {fraternities.map(f => (
+                <option key={f.name}>{f.name}</option>
+              ))}
             </select>
           </div>
         )}

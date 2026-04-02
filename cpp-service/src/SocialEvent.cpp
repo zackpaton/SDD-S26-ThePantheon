@@ -13,8 +13,8 @@ SocialEvent::SocialEvent()
 SocialEvent::SocialEvent(const std::string& id, const std::string& title,
                          const std::string& description, std::time_t date,
                          const std::string& location, const std::string& coordinatorId,
-                         bool isFormal, int maxCapacity)
-    : Event(id, title, description, date, location, coordinatorId),
+                         const std::string& fraternity, bool isFormal, int maxCapacity)
+    : Event(id, title, description, date, location, coordinatorId, fraternity),
       isFormal(isFormal), 
       hasAlcohol(false),
       maxCapacity(maxCapacity) {}
