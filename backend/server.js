@@ -1,13 +1,20 @@
+// Keep all your existing requires and setup
 const express = require('express');
 const admin = require('firebase-admin');
 const { spawn } = require('child_process');
 const cors = require('cors');
 const path = require('path');
-const nodemailer = require('nodemailer')
+const nodemailer = require('nodemailer');
+const next = require('next'); // ✅ added for Next.js handling
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// ------------------- Next.js Setup -------------------
+const dev = process.env.NODE_ENV !== 'production';
+const nextApp = next({ dev, dir: path.join(__dirname, '../frontend') });
+const handle = nextApp.getRequestHandler();
 
 // Initialize Firebase Admin SDK
 const serviceAccount = require('./serviceAccountKey.json');
@@ -432,20 +439,25 @@ app.get('/api/statistics', async (req, res) => {
 
 
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'Internal server error' });
-});
+// ------------------- Next.js Catch-All for non-API routes -------------------
+nextApp.prepare().then(() => {
+  // Replace your old static serving code with this
+  app.get('/{*path}', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).send('API route not found');
+    }
+    return handle(req, res);
+  });
 
-app.listen(PORT, async () => {
-  console.log(`🚀 Fraternity Calendar API running on port ${PORT}`);
-  console.log(`📁 C++ service path: ${CPP_EXECUTABLE}`);
+  app.listen(PORT, async () => {
+    console.log(`🚀 Fraternity Calendar API running on port ${PORT}`);
+    console.log(`📁 C++ service path: ${CPP_EXECUTABLE}`);
 
-  try {
-    await loadEventsToCppService();
-    console.log("✅ Initial events loaded into C++ service");
-  } catch (err) {
-    console.error("❌ Failed initial load:", err);
-  }
+    try {
+      await loadEventsToCppService();
+      console.log("✅ Initial events loaded into C++ service");
+    } catch (err) {
+      console.error("❌ Failed initial load:", err);
+    }
+  });
 });

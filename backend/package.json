@@ -5,12 +5,17 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "firebase-admin": "^13.7.0",
+    "next": "^16.2.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.4",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build-frontend": "cd ../frontend && npm install && npm run build",
+    "start-all": "npm run build-frontend && node server.js"
   },
   "name": "backend",
   "version": "1.0.0",
