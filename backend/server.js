@@ -349,6 +349,8 @@ app.put('/api/events/:id/rsvp', authenticate, async (req, res) => {
       attendeeId: req.user.uid
     };
 
+    console.log(rsvpData);
+
     const result = await callCppService('add_attendee', rsvpData);
     
     if (result.error) {

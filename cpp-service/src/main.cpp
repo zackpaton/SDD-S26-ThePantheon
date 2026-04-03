@@ -157,6 +157,7 @@ void handleAddPNMToEvent(const json& input) {
 
 
 void handleAddAttendeeToEvent(const json& input) {
+    std::cerr<<input<<std::endl;
     std::string eventId = input["eventId"];
     std::string attendeeId = input["attendeeId"];
     auto event = globalManager.getEvent(eventId);
@@ -166,8 +167,9 @@ void handleAddAttendeeToEvent(const json& input) {
         std::cout << error.dump() << std::endl;
         return;
     }
-
+    std::cerr<<event<<std::endl;
     event->addAttendee(attendeeId);
+    std::cerr<<event<<std::endl;
     json result;
     result["success"] = true;
     result["event"] = event->toJson();
