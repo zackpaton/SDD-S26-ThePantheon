@@ -401,9 +401,11 @@ app.put('/api/events/:id/notifications', authenticate, async (req, res) => {
 
     const payload = {
       eventId: req.params.id,
-      userId: req.user.uid,
+      attendeeId: req.user.uid,
       enabled: enabled
     }
+
+    console.log(payload)
 
     const result = await callCppService('toggle_notification', payload)
     if (result.error) {

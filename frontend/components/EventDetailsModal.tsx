@@ -32,6 +32,15 @@ export default function EventDetailsModal({
   }, [event, userId])
 
   // -----------------------------
+  // Initialize Notification state
+  // -----------------------------
+  useEffect(() => {
+    if (!userId || !event.notificationAttendeeIds) return
+    const isNotifications = event.notificationAttendeeIds.includes(userId)
+    setNotificationsEnabled(isNotifications)
+  }, [event, userId])
+
+  // -----------------------------
   // Fetch attendee names
   // -----------------------------
   useEffect(() => {

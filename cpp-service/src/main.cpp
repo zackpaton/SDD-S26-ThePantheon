@@ -196,11 +196,13 @@ void handleRemoveAttendeeFromEvent(const json& input) {
 }
 
 void handleToggleNotification(const json& input) {
+    std::cerr<<input<<std::endl;
     std::string eventId = input["eventId"];
     std::string attendeeId = input["attendeeId"];
     bool enabled = input["enabled"];
 
     auto event = globalManager.getEvent(eventId);
+    std::cerr<<event<<std::endl;
     if (!event) {
         json error;
         error["error"] = "Event not found";

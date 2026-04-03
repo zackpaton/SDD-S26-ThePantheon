@@ -55,6 +55,7 @@ public:
     std::string getFraternity() const { return fraternity; }
     std::vector<std::string> getAttendeeIds() const { return attendeeIds; }
     int getAttendeeCount() const { return attendeeIds.size(); }
+    std::vector<std::string> getNotificationAttendeeIds() const { return notificationAttendeeIds; }
     
     
     // ENCAPSULATION: Setters provide controlled modification
