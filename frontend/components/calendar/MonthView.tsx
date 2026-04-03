@@ -29,7 +29,7 @@ export default function MonthView({ currentDate }: { currentDate: Date }) {
         const token = await currentUser.getIdToken()
         const uid = currentUser.uid
 
-        const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+        const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${uid}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -89,7 +89,7 @@ export default function MonthView({ currentDate }: { currentDate: Date }) {
 
   const fetchEvents = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/events")
+      const res = await fetch("https://sdd-s26-thepantheon.onrender.com/api/events")
       const data = await res.json()
 
       // Attach color dynamically based on fraternity
