@@ -27,8 +27,7 @@ export default function EventDetailsModal({
   // -----------------------------
   useEffect(() => {
     if (!userId || !event.attendeeIds) return
-    const isAttending = event.attendeeIds.includes(userId)
-    setRsvpStatus(isAttending)
+    setRsvpStatus(event.attendeeIds.includes(userId))
   }, [event, userId])
 
   // -----------------------------
@@ -36,8 +35,7 @@ export default function EventDetailsModal({
   // -----------------------------
   useEffect(() => {
     if (!userId || !event.notificationAttendeeIds) return
-    const isNotifications = event.notificationAttendeeIds.includes(userId)
-    setNotificationsEnabled(isNotifications)
+    setNotificationsEnabled(event.notificationAttendeeIds.includes(userId))
   }, [event, userId])
 
   // -----------------------------
@@ -52,7 +50,6 @@ export default function EventDetailsModal({
 
       try {
         const token = await auth.currentUser?.getIdToken()
-
         const names = await Promise.all(
           event.attendeeIds.map(async (uid: string) => {
             const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${uid}`, {
@@ -60,18 +57,15 @@ export default function EventDetailsModal({
                 Authorization: `Bearer ${token}`,
               },
             })
-
             const data = await res.json()
             return `${data.firstName || ""} ${data.lastName || ""}`.trim() || "Unknown User"
           })
         )
-
         setAttendeeNames(names)
       } catch (err) {
         console.error("Failed to fetch attendees:", err)
       }
     }
-
     fetchAttendees()
   }, [event])
 
@@ -81,7 +75,6 @@ export default function EventDetailsModal({
   const handleRSVP = async () => {
     try {
       const token = await auth.currentUser?.getIdToken()
-
       const endpoint = rsvpStatus
         ? `/api/events/${event.id}/unrsvp`
         : `/api/events/${event.id}/rsvp`
@@ -101,16 +94,12 @@ export default function EventDetailsModal({
   }
 
   // -----------------------------
-  // Notification toggle (frontend only for now)
+  // Notification toggle
   // -----------------------------
   const handleNotificationToggle = async (checked: boolean) => {
     setNotificationsEnabled(checked)
-
-    // OPTIONAL: Hook this up later to backend
-    
     try {
       const token = await auth.currentUser?.getIdToken()
-
       await fetch(`https://sdd-s26-thepantheon.onrender.com/api/events/${event.id}/notifications`, {
         method: "PUT",
         headers: {
@@ -122,7 +111,6 @@ export default function EventDetailsModal({
     } catch (err) {
       console.error("Notification update failed:", err)
     }
-    
   }
 
   const isCoordinatorOwner =
@@ -142,11 +130,11 @@ export default function EventDetailsModal({
           ✕
         </button>
 
-        <h2 className="text-xl font-bold mb-4">{event.title}</h2>
+        <h2 className="text-xl font-bold mb-2">{event.title}</h2>
 
         <div className="text-sm mb-2">
-          <span className="font-semibold">Date: </span>
-          {new Date(event.date * 1000).toLocaleString()}
+          <span className="font-semibold">Fraternity: </span>
+          {event.fraternity}
         </div>
 
         <div className="text-sm mb-2">
@@ -155,22 +143,39 @@ export default function EventDetailsModal({
         </div>
 
         <div className="text-sm mb-2">
-          <span className="font-semibold">Fraternity: </span>
-          {event.fraternity}
+          <span className="font-semibold">Date/Time: </span>
+          {(() => {
+            const startTime = new Date(event.startTime * 1000)
+            const endTime = new Date(event.endTime * 1000)
+            
+            const optionsDate: Intl.DateTimeFormatOptions = {
+              month: "numeric",
+              day: "numeric",
+              year: "numeric",
+            }
+
+            const optionsTime: Intl.DateTimeFormatOptions = {
+              hour: "numeric",
+              minute: "numeric",
+              hour12: true,
+            }
+
+            const dateStr = startTime.toLocaleDateString(undefined, optionsDate)
+            const startTimeStr = startTime.toLocaleTimeString(undefined, optionsTime)
+            const endTimeStr = endTime.toLocaleTimeString(undefined, optionsTime)
+
+            return `${dateStr}, ${startTimeStr} - ${endTimeStr}`
+          })()}
         </div>
 
         <div className="text-sm mb-2">
           <span className="font-semibold">Location: </span>
-          {event.location || (
-            <span className="text-gray-400 italic">Not provided</span>
-          )}
+          {event.location || <span className="text-gray-400 italic">Not provided</span>}
         </div>
 
         <div className="text-sm mb-4">
           <span className="font-semibold">Description: </span>
-          {event.description || (
-            <span className="text-gray-400 italic">No description</span>
-          )}
+          {event.description || <span className="text-gray-400 italic">No description</span>}
         </div>
 
         {/* Coordinator view */}
@@ -190,7 +195,6 @@ export default function EventDetailsModal({
               {event.attendeeCount > 1 && `${event.attendeeCount} people`}
             </div>
 
-            {/* Attendee list */}
             {attendeeNames.length > 0 && (
               <div className="text-sm mt-2 max-h-32 overflow-auto border rounded p-2">
                 {attendeeNames.map((name, index) => (
@@ -207,23 +211,18 @@ export default function EventDetailsModal({
             <button
               onClick={handleRSVP}
               className={`w-full py-2 rounded text-white ${
-                rsvpStatus
-                  ? "bg-red-500 hover:bg-red-600"
-                  : "bg-green-500 hover:bg-green-600"
+                rsvpStatus ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"
               }`}
             >
               {rsvpStatus ? "Withdraw RSVP" : "RSVP"}
             </button>
 
-            {/* Notifications (only if RSVPed) */}
             {rsvpStatus && (
               <label className="flex items-center gap-2 mt-3 text-sm">
                 <input
                   type="checkbox"
                   checked={notificationsEnabled}
-                  onChange={(e) =>
-                    handleNotificationToggle(e.target.checked)
-                  }
+                  onChange={(e) => handleNotificationToggle(e.target.checked)}
                 />
                 Notify me 1 hour before
               </label>

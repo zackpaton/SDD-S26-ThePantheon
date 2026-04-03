@@ -41,6 +41,12 @@ void Event::toggleNotification(const std::string& userId, bool enabled) {
     }
 }
 
+void Event::notificationSent(const std::string& userId) {
+    if (std::find(notifiedAttendeeIds.begin(), notifiedAttendeeIds.end(), userId) == notifiedAttendeeIds.end()) {
+        notifiedAttendeeIds.push_back(userId);
+    }
+}
+
 bool Event::isAttending(const std::string& userId) const {
     return std::find(attendeeIds.begin(), attendeeIds.end(), userId) != attendeeIds.end();
 }
@@ -60,6 +66,7 @@ json Event::toJson() const {
     j["attendeeIds"] = attendeeIds;
     j["attendeeCount"] = attendeeIds.size();
     j["notificationAttendeeIds"] = notificationAttendeeIds;
+    j["notifiedAttendeeIds"] = notifiedAttendeeIds;
     return j;
 }
 
@@ -81,6 +88,10 @@ void Event::fromJson(const json& j) {
 
     if (j.contains("notificationAttendeeIds")) {
         notificationAttendeeIds = j["notificationAttendeeIds"].get<std::vector<std::string>>();
+    }
+
+    if (j.contains("notifiedAttendeeIds")) {
+        notifiedAttendeeIds = j["notifiedAttendeeIds"].get<std::vector<std::string>>();
     }
 }
 

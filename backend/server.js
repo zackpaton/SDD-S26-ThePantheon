@@ -430,8 +430,10 @@ app.put('/api/events/:id/notifications', authenticate, async (req, res) => {
 app.get('/api/notifications/send', async (req, res) => {
   try {
     // 1️⃣ Get all events from C++ service
+    console.log("here");
     const eventsResult = await callCppService('get_all_events');
-    if (!eventsResult || !eventsResult.events) {
+    console.log(eventsResult);
+    if (!eventsResult) {
       return res.json({ success: true, sent: 0 });
     }
 
@@ -439,8 +441,8 @@ app.get('/api/notifications/send', async (req, res) => {
     let sentCount = 0;
 
     // 2️⃣ Loop through events
-    for (const event of eventsResult.events) {
-      if (!event.notificationAttendeeIds || event.notificationAttendeeIds.length === 0) continue;
+    for (const event of eventsResult) {
+      if (!event.notificationAttendeeIds || event.notificationAttendeeIds.length === 0 || event.notificationAttendeeIds.length == event.notifiedAttendeeIds.length) continue;
 
       const eventTime = event.startTime; // already a Unix timestamp from C++ service
       const notifyWindow = 10 * 60 * 6; // 1 hour
@@ -450,8 +452,10 @@ app.get('/api/notifications/send', async (req, res) => {
         // 3️⃣ Get attendee info from Firebase (to get email addresses)
         const usersSnapshot = await db.ref('users').once('value');
         const users = usersSnapshot.val();
+        let result = [];
 
         for (const uid of event.notificationAttendeeIds) {
+          if (event.notifiedAttendeeIds.includes(uid)) continue;
           const user = users[uid];
           if (!user || !user.email) continue;
 
@@ -459,12 +463,18 @@ app.get('/api/notifications/send', async (req, res) => {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: `Upcoming Event: ${event.title}`,
-            text: `Hi ${user.name || 'there'},\n\nYour event "${event.title}" starts at ${new Date(eventTime * 1000).toLocaleString()}.\nDon't miss it!`,
+            text: `Hi ${user.firstName || 'there'},\n\nYour event "${event.title}" starts at ${new Date(eventTime * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.\nDon't miss it!`,
           };
 
           try {
             await transporter.sendMail(mailOptions);
             sentCount++;
+
+            const notifData = {
+              eventId: event.id,
+              notifiedId: uid
+            };
+            result = await callCppService('notification_sent', notifData)
           } catch (err) {
             console.error(`Failed to send notification to ${user.email}`, err);
           }
@@ -472,6 +482,7 @@ app.get('/api/notifications/send', async (req, res) => {
 
         // 4️⃣ Optionally, clear notificationIds so the user isn't notified again
         // await db.ref(`events/${event.id}/notificationIds`).set([]);
+        await db.ref(`events/${event.id}/notifiedAttendeeIds`).set(result.event.notifiedAttendeeIds);
       }
     }
 

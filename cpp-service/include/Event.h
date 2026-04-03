@@ -31,6 +31,7 @@ protected:  // INHERITANCE: Protected members accessible to derived classes
     std::string fraternity;
     std::vector<std::string> attendeeIds;
     std::vector<std::string> notificationAttendeeIds;
+    std::vector<std::string> notifiedAttendeeIds;
 
 public:
     Event();
@@ -56,6 +57,7 @@ public:
     std::vector<std::string> getAttendeeIds() const { return attendeeIds; }
     int getAttendeeCount() const { return attendeeIds.size(); }
     std::vector<std::string> getNotificationAttendeeIds() const { return notificationAttendeeIds; }
+    std::vector<std::string> getNotifiedAttendeeIds() const { return notifiedAttendeeIds; }
     
     
     // ENCAPSULATION: Setters provide controlled modification
@@ -72,6 +74,7 @@ public:
     void addAttendee(const std::string& userId);
     void removeAttendee(const std::string& userId);
     void toggleNotification(const std::string& userId, bool enabled);
+    void notificationSent(const std::string& userId);
     bool isAttending(const std::string& userId) const;
     
     /**

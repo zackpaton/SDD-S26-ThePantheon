@@ -218,6 +218,25 @@ void handleToggleNotification(const json& input) {
 }
 
 
+void handleNotificationSent(const json& input) {
+    std::string eventId = input["eventId"];
+    std::string notifiedId = input["notifiedId"];
+    auto event = globalManager.getEvent(eventId);
+    if (!event) {
+        json error;
+        error["error"] = "Event not found";
+        std::cout << error.dump() << std::endl;
+        return;
+    }
+
+    event->notificationSent(notifiedId);
+    json result;
+    result["success"] = true;
+    result["event"] = event->toJson();
+    std::cout << result.dump() << std::endl;
+}
+
+
 int main() {
     std::string line;
 
@@ -248,6 +267,8 @@ int main() {
                 handleRemoveAttendeeFromEvent(input);
             } else if (command == "toggle_notification") {
                 handleToggleNotification(input);
+            } else if (command == "notification_sent") {
+                handleNotificationSent(input);
             }
             
             

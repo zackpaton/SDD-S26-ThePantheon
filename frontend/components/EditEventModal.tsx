@@ -35,6 +35,7 @@ export default function EditEventModal({ event, onClose, onSave }: any) {
     const dateObj = new Date(event.date * 1000)
     const startObj = new Date(event.startTime * 1000)
     const endObj = new Date(event.endTime * 1000)
+    const pad = (n: number) => n.toString().padStart(2, "0")
 
     setForm({
       title: event.title || "",
@@ -42,8 +43,10 @@ export default function EditEventModal({ event, onClose, onSave }: any) {
       location: event.location || "",
       eventType: event.eventType || "",
       date: dateObj.toISOString().split("T")[0],
-      startTime: startObj.toISOString().substring(11, 16),
-      endTime: endObj.toISOString().substring(11, 16),
+      
+
+startTime: `${pad(startObj.getHours())}:${pad(startObj.getMinutes())}`,
+endTime: `${pad(endObj.getHours())}:${pad(endObj.getMinutes())}`,
 
       isFormalRush: event.isFormalRush || false,
       beneficiary: event.beneficiary || "",
