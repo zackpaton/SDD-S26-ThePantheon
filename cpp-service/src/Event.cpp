@@ -30,13 +30,13 @@ void Event::removeAttendee(const std::string& userId) {
 
 void Event::toggleNotification(const std::string& userId, bool enabled) {
     if (enabled) {
-        if (std::find(notificationUserIds.begin(), notificationUserIds.end(), userId) == notificationUserIds.end()) {
-            notificationUserIds.push_back(userId);
+        if (std::find(notificationAttendeeIds.begin(), notificationAttendeeIds.end(), userId) == notificationAttendeeIds.end()) {
+            notificationAttendeeIds.push_back(userId);
         }
     } else {
-        notificationUserIds.erase(
-            std::remove(notificationUserIds.begin(), notificationUserIds.end(), userId),
-            notificationUserIds.end()
+        notificationAttendeeIds.erase(
+            std::remove(notificationAttendeeIds.begin(), notificationAttendeeIds.end(), userId),
+            notificationAttendeeIds.end()
         );
     }
 }
@@ -59,7 +59,7 @@ json Event::toJson() const {
     j["eventType"] = getEventType();
     j["attendeeIds"] = attendeeIds;
     j["attendeeCount"] = attendeeIds.size();
-    j["notificationUserIds"] = notificationUserIds;
+    j["notificationAttendeeIds"] = notificationAttendeeIds;
     return j;
 }
 
@@ -79,8 +79,8 @@ void Event::fromJson(const json& j) {
         attendeeIds = j["attendeeIds"].get<std::vector<std::string>>();
     }
 
-    if (j.contains("notificationUserIds")) {
-        notificationUserIds = j["notificationUserIds"].get<std::vector<std::string>>();
+    if (j.contains("notificationAttendeeIds")) {
+        notificationAttendeeIds = j["notificationAttendeeIds"].get<std::vector<std::string>>();
     }
 }
 

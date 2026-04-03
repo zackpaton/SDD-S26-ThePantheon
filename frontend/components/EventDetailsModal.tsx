@@ -98,11 +98,11 @@ export default function EventDetailsModal({
     setNotificationsEnabled(checked)
 
     // OPTIONAL: Hook this up later to backend
-    /*
+    
     try {
       const token = await auth.currentUser?.getIdToken()
 
-      await fetch(`http://localhost:3001/api/events/${event.id}/notifications`, {
+      await fetch(`https://sdd-s26-thepantheon.onrender.com/api/events/${event.id}/notifications`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -113,7 +113,7 @@ export default function EventDetailsModal({
     } catch (err) {
       console.error("Notification update failed:", err)
     }
-    */
+    
   }
 
   const isCoordinatorOwner =

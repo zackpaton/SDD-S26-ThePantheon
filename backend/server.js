@@ -404,12 +404,80 @@ app.put('/api/events/:id/notifications', authenticate, async (req, res) => {
     }
 
     const result = await callCppService('toggle_notification', payload)
-    res.json(result)
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: "Failed to update notifications" })
+    if (result.error) {
+      //console.log(res.status(400).json(result));
+      return res.status(400).json(result);
+    }
+
+    // Update in Firebase
+    await db.ref(`events/${req.params.id}/notificationAttendeeIds`).set(result.event.notificationAttendeeIds);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error updating event:', error);
+    res.status(500).json({ error: error.message });
   }
 })
+
+
+// ------------------- NOTIFICATIONS -------------------
+
+// Endpoint for CRON job to send notifications
+app.get('/api/notifications/send', async (req, res) => {
+  try {
+    // 1️⃣ Get all events from C++ service
+    const eventsResult = await callCppService('get_all_events');
+    if (!eventsResult || !eventsResult.events) {
+      return res.json({ success: true, sent: 0 });
+    }
+
+    const now = Math.floor(Date.now() / 1000); // current Unix timestamp
+    let sentCount = 0;
+
+    // 2️⃣ Loop through events
+    for (const event of eventsResult.events) {
+      if (!event.notificationAttendeeIds || event.notificationAttendeeIds.length === 0) continue;
+
+      const eventTime = event.startTime; // already a Unix timestamp from C++ service
+      const notifyWindow = 10 * 60 * 6; // 1 hour
+
+      // Only notify if event is within the window
+      if (eventTime - now <= notifyWindow && eventTime - now > 0) {
+        // 3️⃣ Get attendee info from Firebase (to get email addresses)
+        const usersSnapshot = await db.ref('users').once('value');
+        const users = usersSnapshot.val();
+
+        for (const uid of event.notificationAttendeeIds) {
+          const user = users[uid];
+          if (!user || !user.email) continue;
+
+          const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: `Upcoming Event: ${event.title}`,
+            text: `Hi ${user.name || 'there'},\n\nYour event "${event.title}" starts at ${new Date(eventTime * 1000).toLocaleString()}.\nDon't miss it!`,
+          };
+
+          try {
+            await transporter.sendMail(mailOptions);
+            sentCount++;
+          } catch (err) {
+            console.error(`Failed to send notification to ${user.email}`, err);
+          }
+        }
+
+        // 4️⃣ Optionally, clear notificationIds so the user isn't notified again
+        // await db.ref(`events/${event.id}/notificationIds`).set([]);
+      }
+    }
+
+    res.json({ success: true, sent: sentCount });
+  } catch (err) {
+    console.error('Error sending notifications:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 
 
