@@ -463,7 +463,14 @@ app.get('/api/notifications/send', async (req, res) => {
             from: process.env.EMAIL_USER,
             to: user.email,
             subject: `Upcoming Event: ${event.title}`,
-            text: `Hi ${user.firstName || 'there'},\n\nYour event "${event.title}" starts at ${new Date(eventTime * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.\nDon't miss it!`,
+            text: `Hi ${user.firstName || 'there'},\n\nYour event "${event.title}" starts at ${
+              new Date(eventTime * 1000).toLocaleTimeString("en-US", {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true,
+                timeZone: "America/New_York",
+              })
+            }.\nDon't miss it!`,
           };
 
           try {
