@@ -3,6 +3,7 @@ const admin = require('firebase-admin');
 const { spawn } = require('child_process');
 const cors = require('cors');
 const path = require('path');
+const nodemailer = require('nodemailer')
 require('dotenv').config();
 
 const app = express();
@@ -10,6 +11,14 @@ const PORT = process.env.PORT || 3001;
 
 // Initialize Firebase Admin SDK
 const serviceAccount = require('./serviceAccountKey.json');
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+})
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -179,6 +188,32 @@ app.put('/api/users/:uid', authenticate, async (req, res) => {
   }
 })
 
+// Get multiple users at once (BATCH)
+app.post('/api/users/batch', async (req, res) => {
+  try {
+    const { uids } = req.body
+
+    if (!uids || !Array.isArray(uids)) {
+      return res.status(400).json({ error: "uids must be an array" })
+    }
+
+    const results = await Promise.all(
+      uids.map(async (uid) => {
+        const snapshot = await db.ref(`users/${uid}`).once('value')
+        return {
+          uid,
+          ...snapshot.val()
+        }
+      })
+    )
+
+    res.json(results)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: "Failed to fetch users batch" })
+  }
+})
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'fraternity-calendar-api' });
@@ -250,22 +285,29 @@ app.post('/api/events', authenticate, async (req, res) => {
 });
 
 // Update event
-app.put('/api/events/:id', async (req, res) => {
+app.put('/api/events/:id', authenticate, async (req, res) => {
   try {
     
     const eventData = {
       ...req.body,
+      coordinatorId: req.user.uid,
       id: req.params.id
     };
     
-    const result = await callCppService('update_event', eventData);
+    const convertedEvent = convertEventDates(eventData);
+
+    console.log(convertedEvent);
+
+    // 3️⃣ Send to C++ service
+    const result = await callCppService('create_event', convertedEvent);
     
     if (result.error) {
+      //console.log(res.status(400).json(result));
       return res.status(400).json(result);
     }
     
     // Update in Firebase
-    await db.ref(`events/${req.params.id}`).update(result.event);
+    await db.ref(`events/${eventData.id}`).update(eventData);
     
     res.json(result);
   } catch (error) {
@@ -291,78 +333,79 @@ app.delete('/api/events/:id', async (req, res) => {
   }
 });
 
-// ==================== EVENT TYPE QUERIES ====================
 
-app.get('/api/events/type/recruitment', async (req, res) => {
+app.put('/api/events/:id/rsvp', authenticate, async (req, res) => {
   try {
-    const result = await callCppService('get_recruitment_events');
+    console.log("handling rsvp");
+    const rsvpData = {
+      eventId: req.params.id,
+      attendeeId: req.user.uid
+    };
+
+    const result = await callCppService('add_attendee', rsvpData);
+    
+    if (result.error) {
+      //console.log(res.status(400).json(result));
+      return res.status(400).json(result);
+    }
+
+    // Update in Firebase
+    await db.ref(`events/${req.params.id}/attendeeIds`).set(result.event.attendeeIds);
+    
     res.json(result);
   } catch (error) {
+    console.error('Error updating event:', error);
     res.status(500).json({ error: error.message });
   }
-});
+})
 
-app.get('/api/events/type/philanthropy', async (req, res) => {
+
+app.put('/api/events/:id/unrsvp', authenticate, async (req, res) => {
   try {
-    const result = await callCppService('get_philanthropy_events');
+    console.log("handling unrsvp");
+    const rsvpData = {
+      eventId: req.params.id,
+      attendeeId: req.user.uid
+    };
+
+    const result = await callCppService('remove_attendee', rsvpData);
+    
+    if (result.error) {
+      //console.log(res.status(400).json(result));
+      return res.status(400).json(result);
+    }
+
+    // Update in Firebase
+    await db.ref(`events/${req.params.id}/attendeeIds`).set(result.event.attendeeIds);
+    
     res.json(result);
   } catch (error) {
+    console.error('Error updating event:', error);
     res.status(500).json({ error: error.message });
   }
-});
+})
 
-app.get('/api/events/type/social', async (req, res) => {
+
+app.put('/api/events/:id/notifications', authenticate, async (req, res) => {
   try {
-    const result = await callCppService('get_social_events');
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    const { enabled } = req.body
 
-// ==================== FILTERING ====================
+    const payload = {
+      eventId: req.params.id,
+      userId: req.user.uid,
+      enabled: enabled
+    }
 
-app.get('/api/events/filter/location/:location', async (req, res) => {
-  try {
-    const result = await callCppService('filter_by_location', { 
-      location: req.params.location 
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const result = await callCppService('toggle_notification', payload)
+    res.json(result)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: "Failed to update notifications" })
   }
-});
+})
 
-app.get('/api/events/filter/date-range', async (req, res) => {
-  try {
-    const { start, end } = req.query;
-    const result = await callCppService('filter_by_date_range', { 
-      start: parseInt(start), 
-      end: parseInt(end) 
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
-app.get('/api/events/upcoming', async (req, res) => {
-  try {
-    const result = await callCppService('get_upcoming_events');
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
-app.get('/api/events/public', async (req, res) => {
-  try {
-    const result = await callCppService('get_public_events');
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 app.get('/api/events/coordinator/:coordinatorId', async (req, res) => {
   try {
@@ -386,91 +429,6 @@ app.get('/api/statistics', async (req, res) => {
   }
 });
 
-// ==================== RECRUITMENT SPECIFIC ====================
-
-app.get('/api/events/rush-round/:round', async (req, res) => {
-  try {
-    const result = await callCppService('get_events_by_rush_round', { 
-      round: req.params.round 
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/events/:eventId/invite-pnm', async (req, res) => {
-  try {
-    const result = await callCppService('add_pnm_to_event', {
-      eventId: req.params.eventId,
-      pnmId: req.body.pnmId
-    });
-    
-    if (result.success) {
-      await db.ref(`events/${req.params.eventId}`).update(result.event);
-    }
-    
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/events/:eventId/record-attendance', async (req, res) => {
-  try {
-    const result = await callCppService('record_pnm_attendance', {
-      eventId: req.params.eventId,
-      pnmId: req.body.pnmId
-    });
-    
-    if (result.success) {
-      await db.ref(`events/${req.params.eventId}`).update(result.event);
-    }
-    
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ==================== PHILANTHROPY SPECIFIC ====================
-
-app.post('/api/events/:eventId/donate', async (req, res) => {
-  try {
-    const result = await callCppService('add_donation', {
-      eventId: req.params.eventId,
-      amount: req.body.amount
-    });
-    
-    if (result.success) {
-      await db.ref(`events/${req.params.eventId}`).update(result.event);
-    }
-    
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ==================== SOCIAL SPECIFIC ====================
-
-app.post('/api/events/:eventId/sell-ticket', async (req, res) => {
-  try {
-    const result = await callCppService('sell_ticket', {
-      eventId: req.params.eventId
-    });
-    
-    if (result.success) {
-      await db.ref(`events/${req.params.eventId}`).update(result.event);
-    }
-    
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// =============== LOGIN / REGISTRATION ================
 
 
 

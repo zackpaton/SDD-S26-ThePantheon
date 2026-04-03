@@ -30,6 +30,7 @@ protected:  // INHERITANCE: Protected members accessible to derived classes
     std::string coordinatorId;  // ID of event coordinator
     std::string fraternity;
     std::vector<std::string> attendeeIds;
+    std::vector<std::string> notificationUserIds;
 
 public:
     Event();
@@ -69,6 +70,7 @@ public:
     // Attendee management
     void addAttendee(const std::string& userId);
     void removeAttendee(const std::string& userId);
+    void toggleNotification(const std::string& userId, bool enabled);
     bool isAttending(const std::string& userId) const;
     
     /**

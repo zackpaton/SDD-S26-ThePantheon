@@ -72,8 +72,16 @@ export default function EditEventModal({ event, onClose, onSave }: any) {
       const endISO = `${form.date}T${form.endTime}:00-04:00`
 
       const token = await auth.currentUser?.getIdToken()
+        const uid = auth.currentUser?.uid
 
-      let payload: any = {
+        const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+        })
+        const coordinator = await res.json()
+
+      const payload: any = {
         title: form.title,
         description: form.description,
         location: form.location,
@@ -81,6 +89,9 @@ export default function EditEventModal({ event, onClose, onSave }: any) {
         date: convDate,
         startTime: startISO,
         endTime: endISO,
+        // 🔹 Coordinator info
+      coordinatorId: coordinator.id,
+      fraternity: coordinator.fraternity,
       }
 
       // Match AddEventModal logic EXACTLY

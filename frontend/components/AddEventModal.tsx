@@ -51,7 +51,7 @@ export default function AddEventModal({ onClose, onCreate }: any) {
     })
     const coordinator = await res.json() // should include id and fraternity
 
-    let payload: any = {
+    const payload: any = {
       title: form.title,
       description: form.description,
       location: form.location,

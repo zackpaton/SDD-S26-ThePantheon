@@ -33,7 +33,7 @@ void handleGetEvent(const json& input) {
 
 void handleCreateEvent(const json& input) {
     try {
-        std::string eventType = input.value("eventType", "General");
+        std::string eventType = input.value("eventType", "Other");
         std::shared_ptr<Event> event;
         
         // Create appropriate event type
@@ -69,9 +69,10 @@ void handleCreateEvent(const json& input) {
 
 void handleUpdateEvent(const json& input) {
     try {
+
         std::string id = input["id"];
         auto existingEvent = globalManager.getEvent(id);
-        
+
         if (!existingEvent) {
             json error;
             error["error"] = "Event not found";
@@ -81,7 +82,6 @@ void handleUpdateEvent(const json& input) {
         
         // Update the existing event
         existingEvent->fromJson(input);
-        
         if (globalManager.updateEvent(existingEvent)) {
             json result;
             result["success"] = true;
@@ -127,74 +127,6 @@ void handleLoadEvents(const json& input) {
     }
 }
 
-void handleGetRecruitmentEvents() {
-    auto events = globalManager.getRecruitmentEvents();
-    json result = json::array();
-    for (const auto& event : events) {
-        result.push_back(event->toJson());
-    }
-    std::cout << result.dump() << std::endl;
-}
-
-void handleGetPhilanthropyEvents() {
-    auto events = globalManager.getPhilanthropyEvents();
-    json result = json::array();
-    for (const auto& event : events) {
-        result.push_back(event->toJson());
-    }
-    std::cout << result.dump() << std::endl;
-}
-
-void handleGetSocialEvents() {
-    auto events = globalManager.getSocialEvents();
-    json result = json::array();
-    for (const auto& event : events) {
-        result.push_back(event->toJson());
-    }
-    std::cout << result.dump() << std::endl;
-}
-
-void handleFilterByLocation(const json& input) {
-    std::string location = input["location"];
-    auto events = globalManager.getEventsByLocation(location);
-    json result = json::array();
-    for (const auto& event : events) {
-        result.push_back(event->toJson());
-    }
-    std::cout << result.dump() << std::endl;
-}
-
-void handleFilterByDateRange(const json& input) {
-    std::time_t start = input["start"].get<long long>();
-    std::time_t end = input["end"].get<long long>();
-    auto events = globalManager.getEventsByDateRange(start, end);
-    json result = json::array();
-    for (const auto& event : events) {
-        result.push_back(event->toJson());
-    }
-    std::cout << result.dump() << std::endl;
-}
-
-void handleGetUpcomingEvents() {
-    auto events = globalManager.getUpcomingEvents();
-    json result = json::array();
-    for (const auto& event : events) {
-        result.push_back(event->toJson());
-    }
-    std::cout << result.dump() << std::endl;
-}
-
-
-void handleGetEventsByCoordinator(const json& input) {
-    std::string coordinatorId = input["coordinatorId"];
-    auto events = globalManager.getEventsByCoordinator(coordinatorId);
-    json result = json::array();
-    for (const auto& event : events) {
-        result.push_back(event->toJson());
-    }
-    std::cout << result.dump() << std::endl;
-}
-
 
 void handleAddPNMToEvent(const json& input) {
     std::string eventId = input["eventId"];
@@ -223,10 +155,10 @@ void handleAddPNMToEvent(const json& input) {
     std::cout << result.dump() << std::endl;
 }
 
-void handleRecordPNMAttendance(const json& input) {
+
+void handleAddAttendeeToEvent(const json& input) {
     std::string eventId = input["eventId"];
-    std::string pnmId = input["pnmId"];
-    
+    std::string attendeeId = input["attendeeId"];
     auto event = globalManager.getEvent(eventId);
     if (!event) {
         json error;
@@ -234,26 +166,18 @@ void handleRecordPNMAttendance(const json& input) {
         std::cout << error.dump() << std::endl;
         return;
     }
-    
-    auto recruitEvent = std::dynamic_pointer_cast<RecruitmentEvent>(event);
-    if (!recruitEvent) {
-        json error;
-        error["error"] = "Event is not a recruitment event";
-        std::cout << error.dump() << std::endl;
-        return;
-    }
-    
-    // recruitEvent->recordPNMAttendance(pnmId);
+
+    event->addAttendee(attendeeId);
     json result;
     result["success"] = true;
-    result["event"] = recruitEvent->toJson();
+    result["event"] = event->toJson();
     std::cout << result.dump() << std::endl;
 }
 
-void handleAddDonation(const json& input) {
+
+void handleRemoveAttendeeFromEvent(const json& input) {
     std::string eventId = input["eventId"];
-    // double amount = input["amount"];
-    
+    std::string attendeeId = input["attendeeId"];
     auto event = globalManager.getEvent(eventId);
     if (!event) {
         json error;
@@ -261,26 +185,19 @@ void handleAddDonation(const json& input) {
         std::cout << error.dump() << std::endl;
         return;
     }
-    
-    auto philEvent = std::dynamic_pointer_cast<PhilanthropyEvent>(event);
-    if (!philEvent) {
-        json error;
-        error["error"] = "Event is not a philanthropy event";
-        std::cout << error.dump() << std::endl;
-        return;
-    }
-    
-    // philEvent->addDonation(amount);
+
+    event->removeAttendee(attendeeId);
     json result;
     result["success"] = true;
-    result["event"] = philEvent->toJson();
+    result["event"] = event->toJson();
     std::cout << result.dump() << std::endl;
 }
 
-/*
-void handleSellTicket(const json& input) {
+void handleToggleNotification(const json& input) {
     std::string eventId = input["eventId"];
-    
+    std::string attendeeId = input["attendeeId"];
+    bool enabled = input["enabled"];
+
     auto event = globalManager.getEvent(eventId);
     if (!event) {
         json error;
@@ -288,27 +205,14 @@ void handleSellTicket(const json& input) {
         std::cout << error.dump() << std::endl;
         return;
     }
-    
-    auto socialEvent = std::dynamic_pointer_cast<SocialEvent>(event);
-    if (!socialEvent) {
-        json error;
-        error["error"] = "Event is not a social event";
-        std::cout << error.dump() << std::endl;
-        return;
-    }
-    
-    if (socialEvent->sellTicket()) {
-        json result;
-        result["success"] = true;
-        result["event"] = socialEvent->toJson();
-        std::cout << result.dump() << std::endl;
-    } else {
-        json error;
-        error["error"] = "Cannot sell ticket - event may be sold out or tickets not required";
-        std::cout << error.dump() << std::endl;
-    }
+
+    event->toggleNotification(attendeeId, enabled);
+    json result;
+    result["success"] = true;
+    result["event"] = event->toJson();
+    std::cout << result.dump() << std::endl;
 }
-*/
+
 
 int main() {
     std::string line;
@@ -334,47 +238,18 @@ int main() {
                 handleDeleteEvent(input);
             } else if (command == "load_events") {
                 handleLoadEvents(input);
+            } else if (command == "add_attendee") {
+                handleAddAttendeeToEvent(input);
+            } else if (command == "remove_attendee") {
+                handleRemoveAttendeeFromEvent(input);
+            } else if (command == "toggle_notification") {
+                handleToggleNotification(input);
             }
-            // Type-specific queries
-            else if (command == "get_recruitment_events") {
-                handleGetRecruitmentEvents();
-            } else if (command == "get_philanthropy_events") {
-                handleGetPhilanthropyEvents();
-            } else if (command == "get_social_events") {
-                handleGetSocialEvents();
-            }
-            // Filtering
-            else if (command == "filter_by_location") {
-                handleFilterByLocation(input);
-            } else if (command == "filter_by_date_range") {
-                handleFilterByDateRange(input);
-            } else if (command == "get_upcoming_events") {
-                handleGetUpcomingEvents();
-            } else if (command == "get_public_events") {
-                // handleGetPublicEvents();
-            } else if (command == "get_events_by_coordinator") {
-                handleGetEventsByCoordinator(input);
-            }
-            // Statistics
-            else if (command == "get_statistics") {
-                // handleGetEventStatistics();
-            }
-            // Recruitment-specific
-            else if (command == "get_events_by_rush_round") {
-                // handleGetEventsByRushRound(input);
-            } else if (command == "add_pnm_to_event") {
-                handleAddPNMToEvent(input);
-            } else if (command == "record_pnm_attendance") {
-                handleRecordPNMAttendance(input);
-            }
-            // Philanthropy-specific
-            else if (command == "add_donation") {
-                handleAddDonation(input);
-            }
-            // Social-specific
-            else if (command == "sell_ticket") {
-                // handleSellTicket(input);
-            }
+            
+            
+            
+            
+            
             else {
                 json error;
                 error["error"] = "Unknown command: " + command;

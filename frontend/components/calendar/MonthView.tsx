@@ -95,6 +95,7 @@ export default function MonthView({ currentDate }: { currentDate: Date }) {
       // Attach color dynamically based on fraternity
       const coloredEvents = data.map((ev: any) => {
         const frat = fraternities.find(f => f.name === ev.fraternity)
+        console.log(ev)
         return {
           ...ev,
           color: frat ? frat.color : "bg-gray-500",

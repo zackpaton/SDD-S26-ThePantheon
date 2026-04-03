@@ -31,10 +31,14 @@ json SocialEvent::toJson() const {
 void SocialEvent::fromJson(const json& j) {
     //std::cout<<"hereSocialfromJson"<<std::endl;
     //std::cout<<j<<std::endl;
+    std::cerr<<"in social fromJson"<<std::endl;
+    std::cerr<<j<<std::endl;
     Event::fromJson(j);
+    std::cerr<<"Super event"<<std::endl;
     isFormal = j.value("isFormal", false);
     hasAlcohol = j.value("hasAlcohol", false);
     maxCapacity = j.value("maxCapacity", 0);
+    std::cerr<<"finished social fromjson"<<std::endl;
 }
 
 /*

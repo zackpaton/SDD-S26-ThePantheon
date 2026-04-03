@@ -1,6 +1,7 @@
 #include "Event.h"
 #include <algorithm>
 #include <sstream>
+#include <iostream>
 
 using json = nlohmann::json;
 
@@ -27,6 +28,19 @@ void Event::removeAttendee(const std::string& userId) {
     );
 }
 
+void Event::toggleNotification(const std::string& userId, bool enabled) {
+    if (enabled) {
+        if (std::find(notificationUserIds.begin(), notificationUserIds.end(), userId) == notificationUserIds.end()) {
+            notificationUserIds.push_back(userId);
+        }
+    } else {
+        notificationUserIds.erase(
+            std::remove(notificationUserIds.begin(), notificationUserIds.end(), userId),
+            notificationUserIds.end()
+        );
+    }
+}
+
 bool Event::isAttending(const std::string& userId) const {
     return std::find(attendeeIds.begin(), attendeeIds.end(), userId) != attendeeIds.end();
 }
@@ -45,10 +59,12 @@ json Event::toJson() const {
     j["eventType"] = getEventType();
     j["attendeeIds"] = attendeeIds;
     j["attendeeCount"] = attendeeIds.size();
+    j["notificationUserIds"] = notificationUserIds;
     return j;
 }
 
 void Event::fromJson(const json& j) {
+    std::cerr<<"in eventJson"<<std::endl;
     id = j.value("id", "");
     title = j.value("title", "");
     description = j.value("description", "");
@@ -61,6 +77,10 @@ void Event::fromJson(const json& j) {
     
     if (j.contains("attendeeIds")) {
         attendeeIds = j["attendeeIds"].get<std::vector<std::string>>();
+    }
+
+    if (j.contains("notificationUserIds")) {
+        notificationUserIds = j["notificationUserIds"].get<std::vector<std::string>>();
     }
 }
 

@@ -49,6 +49,7 @@ bool EventManager::removeEvent(const std::string& eventId) {
 }
 
 bool EventManager::updateEvent(std::shared_ptr<Event> event) {
+    std::cerr<<"in manager updateEvent"<<std::endl;
     if (!event || !event->isValid()) {
         return false;
     }
