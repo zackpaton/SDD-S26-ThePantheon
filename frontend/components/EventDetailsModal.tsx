@@ -46,7 +46,7 @@ export default function EventDetailsModal({
 
         const names = await Promise.all(
           event.attendeeIds.map(async (uid: string) => {
-            const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+            const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${uid}`, {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -77,7 +77,7 @@ export default function EventDetailsModal({
         ? `/api/events/${event.id}/unrsvp`
         : `/api/events/${event.id}/rsvp`
 
-      await fetch(`http://localhost:3001${endpoint}`, {
+      await fetch(`https://sdd-s26-thepantheon.onrender.com${endpoint}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

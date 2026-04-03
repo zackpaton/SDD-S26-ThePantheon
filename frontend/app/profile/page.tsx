@@ -24,7 +24,7 @@ export default function ProfilePage() {
 
       try {
         const token = await currentUser.getIdToken()
-        const res = await fetch(`http://localhost:3001/api/users/${currentUser.uid}`, {
+        const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${currentUser.uid}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         const data = await res.json()

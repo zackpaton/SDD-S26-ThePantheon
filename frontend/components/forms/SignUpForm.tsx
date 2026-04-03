@@ -43,7 +43,7 @@ export default function SignUpForm() {
       console.log("✅ User created:", userCredential.user)
 
       // Send profile data to backend
-      await fetch("http://localhost:3001/api/users", {
+      await fetch("https://sdd-s26-thepantheon.onrender.com/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -74,7 +74,7 @@ export default function EditEventModal({ event, onClose, onSave }: any) {
       const token = await auth.currentUser?.getIdToken()
         const uid = auth.currentUser?.uid
 
-        const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+        const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${uid}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -110,7 +110,7 @@ export default function EditEventModal({ event, onClose, onSave }: any) {
         payload.maxCapacity = Number(form.maxCapacity)
       }
 
-      await fetch(`http://localhost:3001/api/events/${event.id}`, {
+      await fetch(`https://sdd-s26-thepantheon.onrender.com/api/events/${event.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

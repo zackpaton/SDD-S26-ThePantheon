@@ -25,7 +25,7 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
       if (!currentUser) throw new Error("User not logged in")
       const token = await currentUser.getIdToken()
 
-      const res = await fetch(`http://localhost:3001/api/users/${userId}`, {
+      const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
