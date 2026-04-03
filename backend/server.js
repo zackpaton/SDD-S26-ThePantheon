@@ -306,7 +306,7 @@ app.put('/api/events/:id', authenticate, async (req, res) => {
     console.log(convertedEvent);
 
     // 3️⃣ Send to C++ service
-    const result = await callCppService('create_event', convertedEvent);
+    const result = await callCppService('update_event', convertedEvent);
     
     if (result.error) {
       //console.log(res.status(400).json(result));
