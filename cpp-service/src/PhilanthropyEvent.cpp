@@ -1,3 +1,7 @@
+/**
+ * @file PhilanthropyEvent.cpp
+ * Philanthropy event subtype: beneficiary and fundraising goal with validation.
+ */
 #include "PhilanthropyEvent.h"
 #include <sstream>
 #include <iomanip>

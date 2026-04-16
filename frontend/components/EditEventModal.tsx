@@ -1,75 +1,118 @@
 "use client"
 
-import { useState, useEffect } from "react"
+/**
+ * Modal for editing an existing event: pre-fills from Unix timestamps, PUTs updates, and runs onSave on success.
+ */
+import { useState, type ChangeEvent } from "react"
 import { auth } from "@/lib/firebase"
 
-export default function EditEventModal({ event, onClose, onSave }: any) {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    location: "",
-    eventType: "",
-    date: "",
-    startTime: "",
-    endTime: "",
+type EditableEvent = {
+  id: string
+  title?: string
+  description?: string
+  location?: string
+  eventType?: string
+  date: number
+  startTime: number
+  endTime: number
+  isFormalRush?: boolean
+  beneficiary?: string
+  fundraisingGoal?: number
+  isFormal?: boolean
+  hasAlcohol?: boolean
+  maxCapacity?: number
+}
 
-    // Recruitment
-    isFormalRush: false,
+type UpdateEventPayload = {
+  title: string
+  description: string
+  location: string
+  eventType: string
+  date: string
+  startTime: string
+  endTime: string
+  coordinatorId: string | undefined
+  fraternity: string | undefined
+  isFormalRush?: boolean
+  beneficiary?: string
+  fundraisingGoal?: number
+  isFormal?: boolean
+  hasAlcohol?: boolean
+  maxCapacity?: number
+}
 
-    // Philanthropy
-    beneficiary: "",
-    fundraisingGoal: "",
+type EditEventModalProps = {
+  event: EditableEvent
+  onClose: () => void
+  onSave: () => void
+}
 
-    // Social
-    isFormal: false,
-    hasAlcohol: false,
-    maxCapacity: "",
-  })
+type EditEventFormState = {
+  title: string
+  description: string
+  location: string
+  eventType: string
+  date: string
+  startTime: string
+  endTime: string
+  isFormalRush: boolean
+  beneficiary: string
+  fundraisingGoal: string
+  isFormal: boolean
+  hasAlcohol: boolean
+  maxCapacity: string
+}
 
-  // -----------------------------
-  // Pre-fill form
-  // -----------------------------
-  useEffect(() => {
-    if (!event) return
+/** Maps a stored event (Unix seconds) into date/time strings for HTML date and time inputs. */
+function createFormStateFromEvent(ev: EditableEvent): EditEventFormState {
+  const dateObj = new Date(ev.date * 1000)
+  const startObj = new Date(ev.startTime * 1000)
+  const endObj = new Date(ev.endTime * 1000)
+  const pad = (n: number) => n.toString().padStart(2, "0")
 
-    const dateObj = new Date(event.date * 1000)
-    const startObj = new Date(event.startTime * 1000)
-    const endObj = new Date(event.endTime * 1000)
-    const pad = (n: number) => n.toString().padStart(2, "0")
+  return {
+    title: ev.title || "",
+    description: ev.description || "",
+    location: ev.location || "",
+    eventType: ev.eventType || "",
+    date: dateObj.toISOString().split("T")[0],
+    startTime: `${pad(startObj.getHours())}:${pad(startObj.getMinutes())}`,
+    endTime: `${pad(endObj.getHours())}:${pad(endObj.getMinutes())}`,
+    isFormalRush: ev.isFormalRush || false,
+    beneficiary: ev.beneficiary || "",
+    fundraisingGoal: ev.fundraisingGoal?.toString() || "",
+    isFormal: ev.isFormal || false,
+    hasAlcohol: ev.hasAlcohol || false,
+    maxCapacity: ev.maxCapacity?.toString() || "",
+  }
+}
 
-    setForm({
-      title: event.title || "",
-      description: event.description || "",
-      location: event.location || "",
-      eventType: event.eventType || "",
-      date: dateObj.toISOString().split("T")[0],
-      
+/** Form state is initialized from props via createFormStateFromEvent; PUT merges coordinator fields from the API user record. */
+export default function EditEventModal({ event, onClose, onSave }: EditEventModalProps) {
+  const [submitError, setSubmitError] = useState("")
+  const [form, setForm] = useState<EditEventFormState>(() => createFormStateFromEvent(event))
 
-startTime: `${pad(startObj.getHours())}:${pad(startObj.getMinutes())}`,
-endTime: `${pad(endObj.getHours())}:${pad(endObj.getMinutes())}`,
-
-      isFormalRush: event.isFormalRush || false,
-      beneficiary: event.beneficiary || "",
-      fundraisingGoal: event.fundraisingGoal?.toString() || "",
-      isFormal: event.isFormal || false,
-      hasAlcohol: event.hasAlcohol || false,
-      maxCapacity: event.maxCapacity?.toString() || "",
-    })
-  }, [event])
-
-  const handleChange = (e: any) => {
-    const { name, value, type, checked } = e.target
+  /** Updates one field in the local edit form (text or checkbox). */
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const target = e.target
+    const name = target.name
+    const nextValue =
+      target instanceof HTMLInputElement && target.type === "checkbox"
+        ? target.checked
+        : (target as HTMLInputElement | HTMLSelectElement).value
     setForm({
       ...form,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: nextValue,
     })
   }
 
   // -----------------------------
   // Submit (PUT instead of POST)
   // -----------------------------
+  /** Sends PUT /api/events/:id with the merged body and coordinator metadata, then onSave + onClose. */
   const handleSubmit = async () => {
     try {
+      setSubmitError("")
       const convDate = `${form.date}T00:00:00-04:00`
       const startISO = `${form.date}T${form.startTime}:00-04:00`
       const endISO = `${form.date}T${form.endTime}:00-04:00`
@@ -77,14 +120,17 @@ endTime: `${pad(endObj.getHours())}:${pad(endObj.getMinutes())}`,
       const token = await auth.currentUser?.getIdToken()
         const uid = auth.currentUser?.uid
 
-        const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${uid}`, {
+        const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
         })
-        const coordinator = await res.json()
+        const coordinator = (await res.json()) as {
+          id?: string
+          fraternity?: string
+        }
 
-      const payload: any = {
+      const payload: UpdateEventPayload = {
         title: form.title,
         description: form.description,
         location: form.location,
@@ -113,7 +159,7 @@ endTime: `${pad(endObj.getHours())}:${pad(endObj.getMinutes())}`,
         payload.maxCapacity = Number(form.maxCapacity)
       }
 
-      await fetch(`https://sdd-s26-thepantheon.onrender.com/api/events/${event.id}`, {
+      const putRes = await fetch(`http://localhost:3001/api/events/${event.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -122,10 +168,17 @@ endTime: `${pad(endObj.getHours())}:${pad(endObj.getMinutes())}`,
         body: JSON.stringify(payload),
       })
 
+      const putBody = (await putRes.json().catch(() => ({}))) as { error?: string }
+      if (!putRes.ok) {
+        setSubmitError(putBody.error || `Could not save event (${putRes.status})`)
+        return
+      }
+
       onSave()
       onClose()
     } catch (err) {
       console.error(err)
+      setSubmitError("Something went wrong. Please try again.")
     }
   }
 
@@ -136,6 +189,12 @@ endTime: `${pad(endObj.getHours())}:${pad(endObj.getMinutes())}`,
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
       <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
         <h2 className="text-lg font-semibold mb-4">Edit Event</h2>
+
+        {submitError ? (
+          <p className="text-sm text-red-600 mb-3" role="alert">
+            {submitError}
+          </p>
+        ) : null}
 
         <div className="flex flex-col gap-2">
           {/* Event Type FIRST */}

@@ -1,4 +1,6 @@
-// /data/fraternities.ts
+/**
+ * Static fraternity list with Tailwind color classes for calendar event chips and filters.
+ */
 export const fraternities = [
   { name: "Sigma Chi", color: "bg-yellow-500" },
   { name: "Phi Delta Theta", color: "bg-red-500" },
@@ -25,7 +27,7 @@ export const fraternities = [
   { name: "Delta Tau Delta", color: "bg-pink-600" },
 ]
 
-// Optional: create a fast lookup for EventItem colors
+/** Map of fraternity name to Tailwind class for quick color lookup without scanning the array. */
 export const fraternityColors: Record<string, string> = Object.fromEntries(
   fraternities.map(f => [f.name, f.color])
 )

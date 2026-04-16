@@ -1,9 +1,37 @@
 "use client"
 
-import { useState } from "react"
+/**
+ * Modal form for coordinators to create a new calendar event (typed fields per event category) and POST to the API.
+ */
+import { useState, type ChangeEvent } from "react"
 import { auth } from "@/lib/firebase"
 
-export default function AddEventModal({ onClose, onCreate }: any) {
+type CreateEventPayload = {
+  title: string
+  description: string
+  location: string
+  eventType: string
+  date: string
+  startTime: string
+  endTime: string
+  coordinatorId: string | undefined
+  fraternity: string | undefined
+  isFormalRush?: boolean
+  beneficiary?: string
+  fundraisingGoal?: number
+  isFormal?: boolean
+  hasAlcohol?: boolean
+  maxCapacity?: number
+}
+
+type AddEventModalProps = {
+  onClose: () => void
+  onCreate: () => void
+}
+
+/** Controlled form that loads coordinator info, builds the payload, and calls onCreate after a successful POST. */
+export default function AddEventModal({ onClose, onCreate }: AddEventModalProps) {
+  const [submitError, setSubmitError] = useState("")
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -26,16 +54,24 @@ export default function AddEventModal({ onClose, onCreate }: any) {
     maxCapacity: "",
   })
 
-  const handleChange = (e: any) => {
-    const { name, value, type, checked } = e.target
+  /** Updates a single form field from controlled inputs or checkboxes. */
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const target = e.target
+    const name = target.name
+    const nextValue =
+      target instanceof HTMLInputElement && target.type === "checkbox"
+        ? target.checked
+        : (target as HTMLInputElement | HTMLSelectElement).value
     setForm({
       ...form,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: nextValue,
     })
   }
 
+  /** Validates implicit required fields, POSTs JSON to /api/events with auth, then closes and refreshes. */
   const handleSubmit = async () => {
   try {
+    setSubmitError("")
     const convDate = `${form.date}T00:00:00-04:00`
     const startISO = `${form.date}T${form.startTime}:00-04:00`
     const endISO = `${form.date}T${form.endTime}:00-04:00`
@@ -44,14 +80,17 @@ export default function AddEventModal({ onClose, onCreate }: any) {
     const token = await auth.currentUser?.getIdToken()
     const uid = auth.currentUser?.uid
 
-    const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${uid}`, {
+    const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
-    const coordinator = await res.json() // should include id and fraternity
+    const coordinator = (await res.json()) as {
+      id?: string
+      fraternity?: string
+    }
 
-    const payload: any = {
+    const payload: CreateEventPayload = {
       title: form.title,
       description: form.description,
       location: form.location,
@@ -81,7 +120,7 @@ export default function AddEventModal({ onClose, onCreate }: any) {
       payload.maxCapacity = Number(form.maxCapacity)
     }
 
-    await fetch("https://sdd-s26-thepantheon.onrender.com/api/events", {
+    const createRes = await fetch("http://localhost:3001/api/events", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -90,10 +129,17 @@ export default function AddEventModal({ onClose, onCreate }: any) {
       body: JSON.stringify(payload),
     })
 
+    const body = (await createRes.json().catch(() => ({}))) as { error?: string }
+    if (!createRes.ok) {
+      setSubmitError(body.error || `Could not create event (${createRes.status})`)
+      return
+    }
+
     onCreate()
     onClose()
   } catch (err) {
     console.error(err)
+    setSubmitError("Something went wrong. Please try again.")
   }
 }
 
@@ -101,6 +147,12 @@ export default function AddEventModal({ onClose, onCreate }: any) {
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
       <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
         <h2 className="text-lg font-semibold mb-4">Add Event</h2>
+
+        {submitError ? (
+          <p className="text-sm text-red-600 mb-3" role="alert">
+            {submitError}
+          </p>
+        ) : null}
 
         <div className="flex flex-col gap-2">
           {/* Event Type FIRST */}

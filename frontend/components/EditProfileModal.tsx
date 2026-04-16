@@ -1,23 +1,42 @@
 "use client"
 
+/**
+ * Modal to edit the signed-in user’s profile fields and persist via PUT /api/users/:userId.
+ */
 import { useState } from "react"
 import { auth } from "@/lib/firebase"
 
-interface Props {
-  profile: any
-  userId: string
-  onClose: () => void
-  onSave: (updatedProfile: any) => void
+/** User document fields used by this modal and returned from the API. */
+export type UserProfile = {
+  id?: string
+  email?: string
+  firstName?: string
+  lastName?: string
+  classYear?: string
+  major?: string
+  interests?: string
+  role?: string
+  fraternity?: string
 }
 
+interface Props {
+  profile: UserProfile
+  userId: string
+  onClose: () => void
+  onSave: (updatedProfile: UserProfile) => void
+}
+
+/** Local form mirrors profile; on successful save passes the server JSON to onSave before closing. */
 export default function EditProfileModal({ profile, userId, onClose, onSave }: Props) {
-  const [formData, setFormData] = useState<any>({ ...profile })
+  const [formData, setFormData] = useState<UserProfile>({ ...profile })
   const [loading, setLoading] = useState(false)
 
+  /** Merges input/textarea changes into formData by field name. */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
+  /** Authenticated PUT of formData; surfaces errors to the console only. */
   const handleSubmit = async () => {
     setLoading(true)
     try {
@@ -25,7 +44,7 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
       if (!currentUser) throw new Error("User not logged in")
       const token = await currentUser.getIdToken()
 
-      const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${userId}`, {
+      const res = await fetch(`http://localhost:3001/api/users/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -35,7 +54,7 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
       })
 
       if (!res.ok) throw new Error("Failed to update profile")
-      const updatedProfile = await res.json()
+      const updatedProfile = (await res.json()) as UserProfile
       onSave(updatedProfile)
       onClose()
     } catch (err) {

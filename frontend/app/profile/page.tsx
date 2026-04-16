@@ -1,10 +1,14 @@
 "use client"
 
+/**
+ * Profile route: shows the signed-in user’s backend profile, logout, and optional edit modal.
+ */
 import { useEffect, useState } from "react"
 import { auth } from "@/lib/firebase"
 import { onAuthStateChanged, signOut } from "firebase/auth"
 import EditProfileModal from "@/components/EditProfileModal"
 
+/** Subscribes to auth, fetches `/api/users/:uid`, and renders profile fields with edit/logout actions. */
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -40,6 +44,7 @@ export default function ProfilePage() {
   // -----------------------------
   // Handle logout
   // -----------------------------
+  /** Signs out of Firebase and sends the browser to /login. */
   const handleLogout = async () => {
     try {
       await signOut(auth)
@@ -57,6 +62,7 @@ export default function ProfilePage() {
     )
   }
 
+  /** Renders a field value or a gray “N/A” placeholder when empty. */
   function DisplayValue({ value }: { value?: string | number | null }) {
     const isEmpty = value === undefined || value === null || value === ""
     return (

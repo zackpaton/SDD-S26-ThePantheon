@@ -1,11 +1,15 @@
 "use client"
 
+/**
+ * Registration form: creates a Firebase user then POSTs profile (role, fraternity) to the backend.
+ */
 import { useState } from "react"
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { fraternities } from "@/data/fraternities"
 
+/** Validates passwords, creates the auth account, syncs `/api/users`, and sends the user to the calendar. */
 export default function SignUpForm() {
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -17,6 +21,7 @@ export default function SignUpForm() {
 
   const router = useRouter()
 
+  /** Runs client-side checks, Firebase signup, and backend user creation in sequence. */
   const handleSignup = async () => {
     try {
       if (password !== confirmPassword) {
@@ -43,7 +48,7 @@ export default function SignUpForm() {
       console.log("✅ User created:", userCredential.user)
 
       // Send profile data to backend
-      await fetch("https://sdd-s26-thepantheon.onrender.com/api/users", {
+      await fetch("http://localhost:3001/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,3 +1,7 @@
+/**
+ * @file EventManager.cpp
+ * In-memory registry of calendar events: CRUD, polymorphic queries, validation, and JSON bulk load/export.
+ */
 #include "EventManager.h"
 #include <algorithm>
 #include <ctime>

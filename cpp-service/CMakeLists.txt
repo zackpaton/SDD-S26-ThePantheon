@@ -17,6 +17,10 @@ set(SOURCES
     src/PhilanthropyEvent.cpp
     src/SocialEvent.cpp
     src/EventManager.cpp
+    src/User.cpp
+    src/GuestUser.cpp
+    src/EventCoordinator.cpp
+    src/UserManager.cpp
     src/main.cpp
 )
 

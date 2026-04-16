@@ -1,5 +1,8 @@
 "use client"
 
+/**
+ * Top navigation: shows Calendar, Events, Chat, Settings, and Profile or Login based on Firebase auth state.
+ */
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -13,6 +16,7 @@ const baseNavItems = [
   { name: "Settings", path: "/settings" },
 ]
 
+/** Client-only nav that subscribes to onAuthStateChanged and highlights the active route. */
 export default function Navbar() {
   const pathname = usePathname()
 

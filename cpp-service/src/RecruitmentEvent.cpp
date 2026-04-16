@@ -1,3 +1,7 @@
+/**
+ * @file RecruitmentEvent.cpp
+ * Recruitment/rush event subtype: formal rush flag layered on the base Event.
+ */
 #include "RecruitmentEvent.h"
 #include <algorithm>
 #include <sstream>

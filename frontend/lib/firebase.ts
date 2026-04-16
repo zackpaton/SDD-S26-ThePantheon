@@ -1,3 +1,6 @@
+/**
+ * Client-side Firebase initialization: configures the web app and exports the Auth instance for login/sign-up flows.
+ */
 import { initializeApp } from "firebase/app"
 import { getAuth } from "firebase/auth"
 

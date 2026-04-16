@@ -153,6 +153,30 @@ src/Event.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/Event.cpp.s
 .PHONY : src/Event.cpp.s
 
+src/EventCoordinator.o: src/EventCoordinator.cpp.o
+.PHONY : src/EventCoordinator.o
+
+# target to build an object file
+src/EventCoordinator.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/EventCoordinator.cpp.o
+.PHONY : src/EventCoordinator.cpp.o
+
+src/EventCoordinator.i: src/EventCoordinator.cpp.i
+.PHONY : src/EventCoordinator.i
+
+# target to preprocess a source file
+src/EventCoordinator.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/EventCoordinator.cpp.i
+.PHONY : src/EventCoordinator.cpp.i
+
+src/EventCoordinator.s: src/EventCoordinator.cpp.s
+.PHONY : src/EventCoordinator.s
+
+# target to generate assembly for a file
+src/EventCoordinator.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/EventCoordinator.cpp.s
+.PHONY : src/EventCoordinator.cpp.s
+
 src/EventManager.o: src/EventManager.cpp.o
 .PHONY : src/EventManager.o
 
@@ -176,6 +200,30 @@ src/EventManager.s: src/EventManager.cpp.s
 src/EventManager.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/EventManager.cpp.s
 .PHONY : src/EventManager.cpp.s
+
+src/GuestUser.o: src/GuestUser.cpp.o
+.PHONY : src/GuestUser.o
+
+# target to build an object file
+src/GuestUser.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/GuestUser.cpp.o
+.PHONY : src/GuestUser.cpp.o
+
+src/GuestUser.i: src/GuestUser.cpp.i
+.PHONY : src/GuestUser.i
+
+# target to preprocess a source file
+src/GuestUser.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/GuestUser.cpp.i
+.PHONY : src/GuestUser.cpp.i
+
+src/GuestUser.s: src/GuestUser.cpp.s
+.PHONY : src/GuestUser.s
+
+# target to generate assembly for a file
+src/GuestUser.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/GuestUser.cpp.s
+.PHONY : src/GuestUser.cpp.s
 
 src/PhilanthropyEvent.o: src/PhilanthropyEvent.cpp.o
 .PHONY : src/PhilanthropyEvent.o
@@ -249,6 +297,54 @@ src/SocialEvent.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/SocialEvent.cpp.s
 .PHONY : src/SocialEvent.cpp.s
 
+src/User.o: src/User.cpp.o
+.PHONY : src/User.o
+
+# target to build an object file
+src/User.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/User.cpp.o
+.PHONY : src/User.cpp.o
+
+src/User.i: src/User.cpp.i
+.PHONY : src/User.i
+
+# target to preprocess a source file
+src/User.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/User.cpp.i
+.PHONY : src/User.cpp.i
+
+src/User.s: src/User.cpp.s
+.PHONY : src/User.s
+
+# target to generate assembly for a file
+src/User.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/User.cpp.s
+.PHONY : src/User.cpp.s
+
+src/UserManager.o: src/UserManager.cpp.o
+.PHONY : src/UserManager.o
+
+# target to build an object file
+src/UserManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/UserManager.cpp.o
+.PHONY : src/UserManager.cpp.o
+
+src/UserManager.i: src/UserManager.cpp.i
+.PHONY : src/UserManager.i
+
+# target to preprocess a source file
+src/UserManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/UserManager.cpp.i
+.PHONY : src/UserManager.cpp.i
+
+src/UserManager.s: src/UserManager.cpp.s
+.PHONY : src/UserManager.s
+
+# target to generate assembly for a file
+src/UserManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/UserManager.cpp.s
+.PHONY : src/UserManager.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -285,9 +381,15 @@ help:
 	@echo "... src/Event.o"
 	@echo "... src/Event.i"
 	@echo "... src/Event.s"
+	@echo "... src/EventCoordinator.o"
+	@echo "... src/EventCoordinator.i"
+	@echo "... src/EventCoordinator.s"
 	@echo "... src/EventManager.o"
 	@echo "... src/EventManager.i"
 	@echo "... src/EventManager.s"
+	@echo "... src/GuestUser.o"
+	@echo "... src/GuestUser.i"
+	@echo "... src/GuestUser.s"
 	@echo "... src/PhilanthropyEvent.o"
 	@echo "... src/PhilanthropyEvent.i"
 	@echo "... src/PhilanthropyEvent.s"
@@ -297,6 +399,12 @@ help:
 	@echo "... src/SocialEvent.o"
 	@echo "... src/SocialEvent.i"
 	@echo "... src/SocialEvent.s"
+	@echo "... src/User.o"
+	@echo "... src/User.i"
+	@echo "... src/User.s"
+	@echo "... src/UserManager.o"
+	@echo "... src/UserManager.i"
+	@echo "... src/UserManager.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

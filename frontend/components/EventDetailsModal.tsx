@@ -1,16 +1,21 @@
 "use client"
 
+/**
+ * Read-only event detail sheet with coordinator tools (edit, RSVP counts) and guest RSVP / notification toggles.
+ */
 import React, { useState, useEffect } from "react"
 import { auth } from "@/lib/firebase"
+import type { CalendarEvent } from "@/components/calendar/MonthView"
 
 interface EventDetailsModalProps {
-  event: any
+  event: CalendarEvent
   userRole: "Event Coordinator" | "Guest User"
   userId: string | null
   onClose: () => void
   onEdit?: () => void
 }
 
+/** Loads attendee display names, keeps RSVP/notification UI in sync with the event payload, and calls backend PUT routes. */
 export default function EventDetailsModal({
   event,
   userRole,
@@ -23,25 +28,25 @@ export default function EventDetailsModal({
   const [attendeeNames, setAttendeeNames] = useState<string[]>([])
 
   // -----------------------------
-  // Initialize RSVP state
+  // Sync RSVP / notification toggles from event + user (deferred to avoid sync setState in effect)
   // -----------------------------
   useEffect(() => {
-    if (!userId || !event.attendeeIds) return
-    setRsvpStatus(event.attendeeIds.includes(userId))
-  }, [event, userId])
-
-  // -----------------------------
-  // Initialize Notification state
-  // -----------------------------
-  useEffect(() => {
-    if (!userId || !event.notificationAttendeeIds) return
-    setNotificationsEnabled(event.notificationAttendeeIds.includes(userId))
+    const t = window.setTimeout(() => {
+      if (userId && event.attendeeIds) {
+        setRsvpStatus(event.attendeeIds.includes(userId))
+      }
+      if (userId && event.notificationAttendeeIds) {
+        setNotificationsEnabled(event.notificationAttendeeIds.includes(userId))
+      }
+    }, 0)
+    return () => window.clearTimeout(t)
   }, [event, userId])
 
   // -----------------------------
   // Fetch attendee names
   // -----------------------------
   useEffect(() => {
+    /** Resolves each attendee uid to a display name via GET /api/users/:uid. */
     const fetchAttendees = async () => {
       if (!event.attendeeIds || event.attendeeIds.length === 0) {
         setAttendeeNames([])
@@ -52,7 +57,7 @@ export default function EventDetailsModal({
         const token = await auth.currentUser?.getIdToken()
         const names = await Promise.all(
           event.attendeeIds.map(async (uid: string) => {
-            const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${uid}`, {
+            const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -72,6 +77,7 @@ export default function EventDetailsModal({
   // -----------------------------
   // RSVP toggle handler
   // -----------------------------
+  /** Toggles RSVP by calling the rsvp or unrsvp endpoint for the current user. */
   const handleRSVP = async () => {
     try {
       const token = await auth.currentUser?.getIdToken()
@@ -79,7 +85,7 @@ export default function EventDetailsModal({
         ? `/api/events/${event.id}/unrsvp`
         : `/api/events/${event.id}/rsvp`
 
-      await fetch(`https://sdd-s26-thepantheon.onrender.com${endpoint}`, {
+      await fetch(`http://localhost:3001${endpoint}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -96,11 +102,12 @@ export default function EventDetailsModal({
   // -----------------------------
   // Notification toggle
   // -----------------------------
+  /** Enables or disables the one-hour reminder for guests who have RSVPed. */
   const handleNotificationToggle = async (checked: boolean) => {
     setNotificationsEnabled(checked)
     try {
       const token = await auth.currentUser?.getIdToken()
-      await fetch(`https://sdd-s26-thepantheon.onrender.com/api/events/${event.id}/notifications`, {
+      await fetch(`http://localhost:3001/api/events/${event.id}/notifications`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -190,9 +197,9 @@ export default function EventDetailsModal({
 
             <div className="text-sm mb-2">
               <span className="font-semibold">RSVPs: </span>
-              {event.attendeeCount === 0 && "0 people"}
-              {event.attendeeCount === 1 && "1 person"}
-              {event.attendeeCount > 1 && `${event.attendeeCount} people`}
+              {(event.attendeeCount ?? 0) === 0 && "0 people"}
+              {(event.attendeeCount ?? 0) === 1 && "1 person"}
+              {(event.attendeeCount ?? 0) > 1 && `${event.attendeeCount} people`}
             </div>
 
             {attendeeNames.length > 0 && (

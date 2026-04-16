@@ -1,3 +1,6 @@
+/**
+ * Compact clickable chip showing an event title on a calendar day cell, tinted by fraternity color.
+ */
 type Event = {
   id: string
   title: string
@@ -10,6 +13,7 @@ interface Props {
   onClick?: () => void // <-- add optional onClick prop
 }
 
+/** Renders a single truncated title bar; invokes onClick when the user selects an event. */
 export default function EventItem({ event, color, onClick }: Props) {
   return (
     <div

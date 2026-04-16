@@ -1,15 +1,20 @@
 "use client"
 
+/**
+ * Email/password login form using Firebase Auth; redirects to /calendar on success.
+ */
 import { useState } from "react"
 import { signInWithEmailAndPassword } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 
+/** Uncontrolled inputs with local state; calls signInWithEmailAndPassword then router.push. */
 export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const router = useRouter()
 
+  /** Signs in with Firebase and navigates to the calendar route. */
   const handleLogin = async () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password)

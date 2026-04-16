@@ -1,5 +1,9 @@
+/**
+ * Marketing/landing route (default Next.js starter content) shown at the site root.
+ */
 import Image from "next/image";
 
+/** Placeholder home page with links to docs and deploy. */
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">

@@ -1,3 +1,7 @@
+/**
+ * @file Event.cpp
+ * Base Event implementation: attendee/notification lists, JSON I/O, validation, and cloning.
+ */
 #include "Event.h"
 #include <algorithm>
 #include <sstream>
@@ -15,12 +19,14 @@ Event::Event(const std::string& id, const std::string& title, const std::string&
     : id(id), title(title), description(description), date(date), startTime(0), endTime(0),
       location(location), coordinatorId(coordinatorId), fraternity(fraternity) {}
 
+/** Adds userId to attendeeIds if not already attending. */
 void Event::addAttendee(const std::string& userId) {
     if (!isAttending(userId)) {
         attendeeIds.push_back(userId);
     }
 }
 
+/** Removes all occurrences of userId from the attendee list. */
 void Event::removeAttendee(const std::string& userId) {
     attendeeIds.erase(
         std::remove(attendeeIds.begin(), attendeeIds.end(), userId),
@@ -28,6 +34,7 @@ void Event::removeAttendee(const std::string& userId) {
     );
 }
 
+/** Adds or removes userId from notificationAttendeeIds depending on enabled. */
 void Event::toggleNotification(const std::string& userId, bool enabled) {
     if (enabled) {
         if (std::find(notificationAttendeeIds.begin(), notificationAttendeeIds.end(), userId) == notificationAttendeeIds.end()) {
@@ -41,16 +48,19 @@ void Event::toggleNotification(const std::string& userId, bool enabled) {
     }
 }
 
+/** Appends userId to notifiedAttendeeIds after a reminder is successfully sent. */
 void Event::notificationSent(const std::string& userId) {
     if (std::find(notifiedAttendeeIds.begin(), notifiedAttendeeIds.end(), userId) == notifiedAttendeeIds.end()) {
         notifiedAttendeeIds.push_back(userId);
     }
 }
 
+/** Returns whether userId appears in attendeeIds. */
 bool Event::isAttending(const std::string& userId) const {
     return std::find(attendeeIds.begin(), attendeeIds.end(), userId) != attendeeIds.end();
 }
 
+/** Serializes core fields, type tag, and id arrays to a nlohmann::json object. */
 json Event::toJson() const {
     json j;
     j["id"] = id;
@@ -70,6 +80,7 @@ json Event::toJson() const {
     return j;
 }
 
+/** Populates fields from JSON (typically from Node or load_events). */
 void Event::fromJson(const json& j) {
     std::cerr<<"in eventJson"<<std::endl;
     id = j.value("id", "");
@@ -108,10 +119,12 @@ std::string Event::getEventDetails() const {
 
 */
 
+/** Basic validation: non-empty id, title, coordinator, and positive date. */
 bool Event::isValid() const {
     return !id.empty() && !title.empty() && date > 0 && !coordinatorId.empty();
 }
 
+/** Returns a copy of this event as a shared_ptr to the base Event type. */
 std::shared_ptr<Event> Event::clone() const {
     return std::make_shared<Event>(*this);
 }

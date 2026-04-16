@@ -1,3 +1,7 @@
+/**
+ * @file SocialEvent.cpp
+ * Social event subtype: formal flag, alcohol, and capacity with JSON extensions on Event.
+ */
 #include "SocialEvent.h"
 #include <algorithm>
 #include <sstream>
