@@ -81,14 +81,6 @@ function callCppService(command, data = null) {
   return operation;
 }
 
-/** Formats a Date as an ISO-like string in America/New_York (used for consistent event timestamps). */
-function getEasternISO(date) {
-  return `${date.toLocaleString('sv-SE', {
-    timeZone: 'America/New_York',
-    hour12: false,
-  }).replace(' ', 'T')}-04:00`;
-}
-
 /** Converts ISO date/time strings on an event object to Unix seconds for the C++ service. */
 function convertEventDates(event) {
   return {

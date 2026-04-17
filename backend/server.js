@@ -1,5 +1,5 @@
 /**
- * HTTP server entry point: Express API for users, events, notifications, and statistics;
+ * HTTP server entry point: Express API for users, events, notifications, and chats;
  * proxies calendar logic to the C++ child process; serves the Next.js frontend for non-API routes.
  */
 require('dotenv').config();
@@ -58,12 +58,6 @@ app.use(
     db,
     callCppService,
     transporter,
-  }),
-);
-app.use(
-  '/api/statistics',
-  createStatisticsRouter({
-    callCppService,
   }),
 );
 
