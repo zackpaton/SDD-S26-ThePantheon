@@ -152,7 +152,6 @@ module.exports = {
   cpp,
   callCppService,
   convertEventDates,
-  getEasternISO,
   loadUsersToCppService,
   loadEventsToCppService,
   loadEventFeedbackToCppService,
