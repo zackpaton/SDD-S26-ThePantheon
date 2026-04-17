@@ -259,7 +259,7 @@ export default function EventDetailsModal({
           <div className="mb-4 border-t border-black/10 pt-3 text-sm">
             <p className="mb-2 font-semibold text-neutral-900">Recruitment Event Details</p>
             <div>
-              <span className="font-semibold">Formal recruitment: </span>
+              <span className="font-semibold">Formal Recruitment: </span>
               {event.isFormalRush ? "Yes" : "No"}
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function EventDetailsModal({
               {event.beneficiary?.trim() ?? ""}
             </div>
             <div>
-              <span className="font-semibold">Fundraising goal: </span>
+              <span className="font-semibold">Fundraising Goal: </span>
               {new Intl.NumberFormat(undefined, {
                 style: "currency",
                 currency: "USD",
@@ -290,15 +290,15 @@ export default function EventDetailsModal({
           <div className="mb-4 border-t border-black/10 pt-3 text-sm">
             <p className="mb-2 font-semibold text-neutral-900">Social Event Details</p>
             <div className="mb-1">
-              <span className="font-semibold">Formal event: </span>
+              <span className="font-semibold">Formal Event: </span>
               {event.isFormal ? "Yes" : "No"}
             </div>
             <div className="mb-1">
-              <span className="font-semibold">Has alcohol: </span>
+              <span className="font-semibold">Has Alcohol: </span>
               {event.hasAlcohol ? "Yes" : "No"}
             </div>
             <div>
-              <span className="font-semibold">Maximum capacity: </span>
+              <span className="font-semibold">Maximum Capacity: </span>
               {typeof event.maxCapacity === "number"
                 ? event.maxCapacity
                 : Number(event.maxCapacity)}
@@ -368,7 +368,7 @@ export default function EventDetailsModal({
                         onClick={handleConfirmDelete}
                         className="flex-1 rounded bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
                       >
-                        {deleteBusy ? "Deleting…" : "Delete permanently"}
+                        {deleteBusy ? "Deleting…" : "Delete Permanently"}
                       </button>
                     </div>
                   </div>
