@@ -1,7 +1,6 @@
 "use client"
 
 
-
 /**
 
  * Calendar shell: shared board state, header, month or week grid, sidebar filters, and modals.
@@ -23,9 +22,7 @@ import CalendarModals from "./CalendarModals"
 import { useCalendarBoard } from "./useCalendarBoard"
 
 
-
 export type ViewType = "month" | "week"
-
 
 
 export default function Calendar() {
@@ -35,7 +32,6 @@ export default function Calendar() {
   const [view, setView] = useState<ViewType>("month")
 
   const [currentDate, setCurrentDate] = useState(new Date())
-
 
 
   return (

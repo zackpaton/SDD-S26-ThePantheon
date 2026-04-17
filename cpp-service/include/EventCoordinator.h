@@ -4,7 +4,8 @@
 #include "User.h"
 
 /**
- * Event Coordinator — extends User with fraternity chapter affiliation.
+ * @file EventCoordinator.h
+ * Coordinator role: User fields plus fraternity chapter for event ownership rules.
  */
 class EventCoordinator : public User {
 private:
@@ -26,4 +27,4 @@ public:
     std::shared_ptr<User> clone() const override;
 };
 
-#endif
+#endif  // EVENT_COORDINATOR_H

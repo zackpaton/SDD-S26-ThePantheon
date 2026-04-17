@@ -8,8 +8,8 @@
 #include <string>
 
 /**
- * In-memory RSVP guest feedback (up/down + comment) per event, keyed by user id.
- * Synced from Firebase on startup; Node writes to Firebase after each C++ upsert.
+ * @file EventFeedbackManager.h
+ * In-memory guest feedback (vote + comment) per event and user; synced with Firebase via Node.
  */
 class EventFeedbackManager {
 private:
@@ -55,4 +55,4 @@ public:
     void clear();
 };
 
-#endif
+#endif  // EVENT_FEEDBACK_MANAGER_H

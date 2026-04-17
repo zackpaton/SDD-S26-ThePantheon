@@ -179,7 +179,6 @@ json EventFeedbackManager::getCoordinatorView(const EventManager& events, const 
         out["error"] = "Event not found";
         return out;
     }
-    // Must not call getAttendeeIds() twice for begin/end — each call returns a new temporary vector.
     const auto attendeeIdsVec = ev->getAttendeeIds();
     std::set<std::string> attendeeSet(attendeeIdsVec.begin(), attendeeIdsVec.end());
 

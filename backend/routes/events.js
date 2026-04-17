@@ -27,7 +27,10 @@ function intervalsOverlapUnix(aStart, aEnd, bStart, bEnd) {
  * Finds a same-fraternity time overlap using the in-memory C++ calendar (get_all_events), not Firebase.
  * Keeps conflict detection on the hot path used for API reads and avoids an extra DB round-trip.
  */
-async function findFraternityTimeConflict(callCppService, { fraternity, startUnix, endUnix, excludeEventId }) {
+async function findFraternityTimeConflict(
+  callCppService,
+  { fraternity, startUnix, endUnix, excludeEventId },
+) {
   if (!fraternity || startUnix == null || endUnix == null || endUnix <= startUnix) {
     return null;
   }
@@ -166,8 +169,6 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
         });
       }
 
-      console.log(convertedEvent);
-
       const result = await callCppService('create_event', convertedEvent);
 
       if (result.error) {
@@ -233,8 +234,6 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
           conflictingEvent: { id: conflict.id, title: conflict.title },
         });
       }
-
-      console.log(convertedEvent);
 
       const result = await callCppService('update_event', convertedEvent);
 
@@ -309,13 +308,10 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
         return res.status(ended.status).json({ error: ended.message });
       }
 
-      console.log('handling rsvp');
       const rsvpData = {
         eventId: req.params.id,
         attendeeId: req.user.uid,
       };
-
-      console.log(rsvpData);
 
       const result = await callCppService('add_attendee', rsvpData);
 
@@ -339,7 +335,6 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
         return res.status(ended.status).json({ error: ended.message });
       }
 
-      console.log('handling unrsvp');
       const rsvpData = {
         eventId: req.params.id,
         attendeeId: req.user.uid,
@@ -374,8 +369,6 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
         attendeeId: req.user.uid,
         enabled,
       };
-
-      console.log(payload);
 
       const result = await callCppService('toggle_notification', payload);
       if (result.error) {

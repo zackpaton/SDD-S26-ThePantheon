@@ -12,7 +12,6 @@ const next = require('next');
 const { admin, db } = require('./lib/firebase');
 const { createTransporter } = require('./lib/email');
 const {
-  CPP_EXECUTABLE,
   callCppService,
   convertEventDates,
   loadUsersToCppService,
@@ -77,16 +76,10 @@ nextApp.prepare().then(() => {
   });
 
   app.listen(PORT, async () => {
-    console.log(`🚀 Fraternity Calendar API running on port ${PORT}`);
-    console.log(`📁 C++ service path: ${CPP_EXECUTABLE}`);
-
     try {
       await loadUsersToCppService();
-      console.log('✅ Initial users loaded into C++ service');
       await loadEventsToCppService();
-      console.log('✅ Initial events loaded into C++ service');
       await loadEventFeedbackToCppService();
-      console.log('✅ Initial event feedback loaded into C++ service');
     } catch (err) {
       console.error('❌ Failed initial load:', err);
     }

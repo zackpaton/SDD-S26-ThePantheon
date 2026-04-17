@@ -123,7 +123,6 @@ export default function SignUpForm() {
           </p>
         ) : null}
 
-        {/* First Name */}
         <div className="mb-4">
           <input
             className={inputClass}
@@ -138,7 +137,6 @@ export default function SignUpForm() {
           />
         </div>
 
-        {/* Last Name */}
         <div className="mb-4">
           <input
             className={inputClass}
@@ -153,7 +151,6 @@ export default function SignUpForm() {
           />
         </div>
 
-        {/* Email */}
         <div className="mb-4">
           <input
             className={inputClass}
@@ -168,7 +165,6 @@ export default function SignUpForm() {
           />
         </div>
 
-        {/* Password */}
         <div className="mb-4">
           <input
             className={inputClass}
@@ -183,7 +179,6 @@ export default function SignUpForm() {
           />
         </div>
 
-        {/* Confirm Password */}
         <div className="mb-4">
           <input
             className={inputClass}
@@ -198,7 +193,6 @@ export default function SignUpForm() {
           />
         </div>
 
-        {/* Role Dropdown */}
         <div className="mb-4">
           <select
             className={`${inputClass} bg-white`}
@@ -216,7 +210,6 @@ export default function SignUpForm() {
           </select>
         </div>
 
-        {/* Fraternity Dropdown (Conditional) */}
         {role === "Event Coordinator" && (
           <div className="mb-4">
             <select

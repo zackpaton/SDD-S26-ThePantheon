@@ -1,7 +1,10 @@
+/*
+ * Global styles: Tailwind v4 entry, light theme tokens, typography, and base cursor affordances.
+ */
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #fff;
   --foreground: #171717;
 }
 
@@ -38,18 +41,22 @@ html {
   input[type="reset"]:not(:disabled) {
     cursor: pointer;
   }
+
   button:disabled,
   input[type="button"]:disabled,
   input[type="submit"]:disabled,
   input[type="reset"]:disabled {
     cursor: not-allowed;
   }
+
   a[href] {
     cursor: pointer;
   }
+
   select:not(:disabled) {
     cursor: pointer;
   }
+
   label:has(input[type="checkbox"]),
   label:has(input[type="radio"]) {
     cursor: pointer;

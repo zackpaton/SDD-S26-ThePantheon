@@ -4,7 +4,8 @@
 #include "User.h"
 
 /**
- * Guest User role — no fraternity-specific fields.
+ * @file GuestUser.h
+ * Guest role profile: same core fields as User, no fraternity.
  */
 class GuestUser : public User {
 public:
@@ -20,4 +21,4 @@ public:
     std::shared_ptr<User> clone() const override;
 };
 
-#endif
+#endif  // GUEST_USER_H

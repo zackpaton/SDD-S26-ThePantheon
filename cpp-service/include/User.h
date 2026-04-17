@@ -6,7 +6,8 @@
 #include <nlohmann/json.hpp>
 
 /**
- * Base user profile (Firebase-compatible fields). Subclasses specialize Guest vs Event Coordinator.
+ * @file User.h
+ * Abstract user profile (Firebase fields); subclasses distinguish guest vs event coordinator.
  */
 class User {
 protected:
@@ -51,4 +52,4 @@ public:
     virtual std::shared_ptr<User> clone() const = 0;
 };
 
-#endif
+#endif  // USER_H

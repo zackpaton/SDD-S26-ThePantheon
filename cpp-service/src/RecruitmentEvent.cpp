@@ -4,7 +4,6 @@
  */
 #include "RecruitmentEvent.h"
 #include <algorithm>
-#include <sstream>
 
 using json = nlohmann::json;
 
@@ -28,22 +27,7 @@ json RecruitmentEvent::toJson() const {
 void RecruitmentEvent::fromJson(const json& j) {
     Event::fromJson(j);
     isFormalRush = j.value("isFormalRush", isFormalRush);
-
 }
-
-/*
-std::string RecruitmentEvent::getEventDetails() const {
-    std::stringstream ss;
-    ss << Event::getEventDetails();
-    ss << "\n  Rush Round: " << rushRound;
-    ss << "\n  Target Recruits: " << targetRecruits;
-    ss << "\n  PNM Attendance: " << getPNMAttendanceCount() << "/" << pnmInviteList.size();
-    ss << " (" << getPNMAttendanceRate() << "%)";
-    ss << "\n  Dress Code: " << dresscode;
-    if (requiresRSVP) ss << "\n  RSVP Required";
-    return ss.str();
-}
-*/
 
 bool RecruitmentEvent::isValid() const {
     return Event::isValid();

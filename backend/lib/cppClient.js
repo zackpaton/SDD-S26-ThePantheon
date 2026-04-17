@@ -134,10 +134,7 @@ async function loadEventsToCppService() {
 
     const eventsArray = Object.values(eventsData).map((event) => convertEventDates(event));
 
-    console.log(eventsArray);
-
     const result = await callCppService('load_events', { events: eventsArray });
-    console.log(result);
     return result;
   } catch (error) {
     console.error('Error loading events to C++ service:', error);

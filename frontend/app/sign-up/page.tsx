@@ -4,8 +4,8 @@
 import SignUpForm from "@/components/forms/SignUpForm";
 
 /** Thin page that only renders the sign-up form component. */
-export default function SignUpPage(){
-  return(
+export default function SignUpPage() {
+  return (
     <SignUpForm />
   )
 }

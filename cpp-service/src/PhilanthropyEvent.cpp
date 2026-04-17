@@ -3,8 +3,6 @@
  * Philanthropy event subtype: beneficiary and fundraising goal with validation.
  */
 #include "PhilanthropyEvent.h"
-#include <sstream>
-#include <iomanip>
 
 using json = nlohmann::json;
 
@@ -31,29 +29,7 @@ void PhilanthropyEvent::fromJson(const json& j) {
     Event::fromJson(j);
     beneficiary = j.value("beneficiary", "");
     fundraisingGoal = j.value("fundraisingGoal", 0.0);
-    
 }
-
-/*
-std::string PhilanthropyEvent::getEventDetails() const {
-    std::stringstream ss;
-    ss << Event::getEventDetails();
-    ss << "\n  Beneficiary: " << beneficiary;
-    ss << "\n  Fundraising: $" << std::fixed << std::setprecision(2) 
-       << currentFunds << " / $" << fundraisingGoal 
-       << " (" << getFundraisingProgress() << "%)";
-    ss << "\n  Volunteer Hours: " << volunteerHoursCompleted 
-       << " / " << volunteerHoursGoal 
-       << " (" << getVolunteerProgress() << "%)";
-    if (!partnerOrganization.empty()) {
-        ss << "\n  Partner: " << partnerOrganization;
-    }
-    if (!sponsors.empty()) {
-        ss << "\n  Sponsors: " << sponsors.size();
-    }
-    return ss.str();
-}
-*/
 
 bool PhilanthropyEvent::isValid() const {
     return Event::isValid() && !beneficiary.empty() && fundraisingGoal > 0;

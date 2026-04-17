@@ -110,9 +110,6 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
     })
   }
 
-  // -----------------------------
-  // Submit (PUT instead of POST)
-  // -----------------------------
   /** Sends PUT /api/events/:id with the merged body and coordinator metadata, then onSave + onClose. */
   const handleSubmit = async () => {
     try {
@@ -136,13 +133,13 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
 
       const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
         headers: {
-            Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
-        })
-        const coordinator = (await res.json()) as {
-          id?: string
-          fraternity?: string
-        }
+      })
+      const coordinator = (await res.json()) as {
+        id?: string
+        fraternity?: string
+      }
 
       const payload: UpdateEventPayload = {
         title: form.title,
@@ -152,12 +149,10 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
         date: convDate,
         startTime: startISO,
         endTime: endISO,
-        // 🔹 Coordinator info
-      coordinatorId: coordinator.id,
-      fraternity: coordinator.fraternity,
+        coordinatorId: coordinator.id,
+        fraternity: coordinator.fraternity,
       }
 
-      // Match AddEventModal logic EXACTLY
       if (form.eventType === "Recruitment") {
         payload.isFormalRush = form.isFormalRush
       }
@@ -198,9 +193,6 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
     }
   }
 
-  // -----------------------------
-  // UI (IDENTICAL ORDER)
-  // -----------------------------
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
       <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
@@ -213,7 +205,6 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
         ) : null}
 
         <div className="flex flex-col gap-2">
-          {/* Event Type FIRST */}
           <select
             name="eventType"
             value={form.eventType}
@@ -230,7 +221,6 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
             <option>Other</option>
           </select>
 
-          {/* Base fields */}
           <input
             name="title"
             placeholder="Title"
@@ -274,8 +264,6 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
             onChange={handleChange}
             className="border p-2 rounded"
           />
-
-          {/* ===== Dynamic Fields (IDENTICAL) ===== */}
 
           {form.eventType === "Recruitment" && (
             <label className="flex items-center gap-2">

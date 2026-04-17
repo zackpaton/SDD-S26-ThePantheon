@@ -1,8 +1,8 @@
 "use client"
 
 /**
- * Week view: sticky weekday/date header inside the scroll region (keeps columns aligned with the hour grid
- * when a vertical scrollbar is present); time gutter + seven day columns scroll together.
+ * Week view: sticky weekday/date row and hour grid share one scroll container so the scrollbar does not
+ * narrow columns under the headers; `h-0 flex-1` bounds height so the 24h grid scrolls inside the pane.
  */
 import { getWeekDaysContaining } from "@/lib/dateUtils"
 import EventTypeIcon from "@/components/EventTypeIcon"
@@ -49,13 +49,6 @@ export default function WeekView({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      {/*
-        Weekday + date rows live inside the same scroll container as the hour grid so the vertical
-        scrollbar does not narrow the grid below the headers (which caused columns to look misaligned).
-        Sticky header keeps names/dates visible while scrolling the schedule.
-        h-0 flex-1: flex-basis 0 so this region gets a bounded height and overflow-y-auto can scroll
-        (otherwise the 24h grid’s min-height expands the page instead of the inner scroller).
-      */}
       <div className="h-0 min-h-0 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]">
         <div className="sticky top-0 z-20 border-b border-black/15 bg-purple-500 pb-2">
           <div
@@ -114,7 +107,7 @@ export default function WeekView({
                 style={{ height: HOUR_PX }}
                 className="text-[10px] text-gray-500 pr-0.5 text-right relative"
               >
-                <span className={`absolute right-0 ${h === 0 ? 'top-0' : '-top-2'}`}>{formatHourLabel(h)}</span>
+                <span className={`absolute right-0 ${h === 0 ? "top-0" : "-top-2"}`}>{formatHourLabel(h)}</span>
               </div>
             ))}
           </div>

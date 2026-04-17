@@ -44,7 +44,7 @@ export default function EventsWeekBoard() {
 
   const weekEvents = useMemo(
     () => collectEventsForWeek(weekAnchor, board),
-    [weekAnchor, board.events, board.eventTypes, board.fraternitiesShown],
+    [weekAnchor, board],
   )
 
   const weekDays = useMemo(() => getWeekDaysContaining(weekAnchor), [weekAnchor])

@@ -15,12 +15,19 @@
   "scripts": {
     "start": "node server.js",
     "build-frontend": "cd ../frontend && rm -rf .next && npm install && npm run build",
-    "start-all": "npm run build-frontend && node server.js"
+    "start-all": "npm run build-frontend && node server.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "name": "backend",
   "version": "1.0.0",
   "main": "server.js",
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
+    "globals": "^17.5.0"
+  }
 }

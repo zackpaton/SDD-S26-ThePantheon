@@ -1,7 +1,8 @@
 "use client"
 
 /**
- * Read-only event detail sheet with coordinator tools (edit, RSVP counts) and guest RSVP / notification toggles.
+ * Read-only event detail sheet: coordinator tools (edit, delete, attendee list, feedback) and guest RSVP /
+ * notification toggles for upcoming or in-progress events when signed in.
  */
 import React, { useState, useEffect, useSyncExternalStore } from "react"
 import Link from "next/link"
@@ -51,9 +52,7 @@ export default function EventDetailsModal({
     setGuestProfileModal(null)
   }, [event.id])
 
-  // -----------------------------
-  // Sync RSVP / notification toggles from event + user (deferred to avoid sync setState in effect)
-  // -----------------------------
+  /** Defers RSVP/notification state from props so setState is not synchronous inside the effect body. */
   useEffect(() => {
     const t = window.setTimeout(() => {
       if (userId && event.attendeeIds) {
@@ -66,9 +65,6 @@ export default function EventDetailsModal({
     return () => window.clearTimeout(t)
   }, [event, userId])
 
-  // -----------------------------
-  // Fetch attendee names
-  // -----------------------------
   useEffect(() => {
     /** Loads full profile per attendee via the C++-backed user registry (`GET /api/users/:id`). */
     const fetchAttendees = async () => {
@@ -98,9 +94,6 @@ export default function EventDetailsModal({
     fetchAttendees()
   }, [event])
 
-  // -----------------------------
-  // RSVP toggle handler
-  // -----------------------------
   /** Toggles RSVP by calling the rsvp or unrsvp endpoint for the current user. */
   const handleRSVP = async () => {
     try {
@@ -123,9 +116,6 @@ export default function EventDetailsModal({
     }
   }
 
-  // -----------------------------
-  // Notification toggle
-  // -----------------------------
   /** Enables or disables the one-hour reminder for guests who have RSVPed. */
   const handleNotificationToggle = async (checked: boolean) => {
     setNotificationsEnabled(checked)
@@ -191,13 +181,9 @@ export default function EventDetailsModal({
     }
   }
 
-  // -----------------------------
-  // Render
-  // -----------------------------
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4">
       <div className="relative max-h-[min(90dvh,calc(100svh-1.5rem))] w-full max-w-lg overflow-y-auto overscroll-contain rounded-xl bg-white px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-11 shadow-lg sm:max-h-[90vh] sm:rounded-lg sm:p-6 sm:pb-6 sm:pt-6">
-        {/* Close button */}
         <button
           type="button"
           onClick={onClose}
@@ -224,7 +210,7 @@ export default function EventDetailsModal({
           {(() => {
             const startTime = new Date(event.startTime * 1000)
             const endTime = new Date(event.endTime * 1000)
-            
+
             const optionsDate: Intl.DateTimeFormatOptions = {
               month: "numeric",
               day: "numeric",
@@ -320,7 +306,6 @@ export default function EventDetailsModal({
             </div>
           )}
 
-        {/* Coordinator view */}
         {isCoordinatorOwner && (
           <>
             {!eventHasEnded && (
@@ -414,7 +399,6 @@ export default function EventDetailsModal({
           </>
         )}
 
-        {/* Guest view — RSVP only for upcoming / in-progress events (logged-in guests only) */}
         {userRole === "Guest User" && !eventHasEnded && userId && (
           <>
             <button

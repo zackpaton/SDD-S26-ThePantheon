@@ -1,0 +1,5 @@
+# Google C++ style (clang-format). See: https://google.github.io/styleguide/cppguide.html
+BasedOnStyle: Google
+ColumnLimit: 80
+DerivePointerAlignment: false
+PointerAlignment: Left

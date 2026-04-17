@@ -1,3 +1,5 @@
+# Builds the calendar_service executable: C++17, nlohmann/json from third_party, headers under include/,
+# sources under src/, and strict compiler warnings (MSVC /W4 or GCC/Clang -Wall -Wextra -Wpedantic).
 cmake_minimum_required(VERSION 3.10)
 project(FraternityCalendarService)
 

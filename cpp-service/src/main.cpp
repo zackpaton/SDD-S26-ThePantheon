@@ -44,8 +44,7 @@ void handleCreateEvent(const json& input) {
     try {
         std::string eventType = input.value("eventType", "Other");
         std::shared_ptr<Event> event;
-        
-        // Create appropriate event type
+
         if (eventType == "Recruitment") {
             event = std::make_shared<RecruitmentEvent>();
         } else if (eventType == "Philanthropy") {
@@ -89,8 +88,7 @@ void handleUpdateEvent(const json& input) {
             std::cout << error.dump() << std::endl;
             return;
         }
-        
-        // Update the existing event
+
         existingEvent->fromJson(input);
         if (globalManager.updateEvent(existingEvent)) {
             json result;
@@ -214,7 +212,7 @@ void handleLoadEvents(const json& input) {
     }
 }
 
-/** Bulk-loads event feedback tree from Firebase (eventFeedback/*). */
+/** Bulk-loads event feedback tree from Firebase. */
 void handleLoadEventFeedback(const json& input) {
     try {
         json fb = input.value("feedback", json::object());
@@ -276,7 +274,6 @@ void handleAddPNMToEvent(const json& input) {
         return;
     }
     
-    // recruitEvent->invitePNM(pnmId);
     json result;
     result["success"] = true;
     result["event"] = recruitEvent->toJson();
@@ -286,7 +283,6 @@ void handleAddPNMToEvent(const json& input) {
 
 /** RSVP: adds attendeeId to the event’s attendee list if not already present. */
 void handleAddAttendeeToEvent(const json& input) {
-    std::cerr<<input<<std::endl;
     std::string eventId = input["eventId"];
     std::string attendeeId = input["attendeeId"];
     auto event = globalManager.getEvent(eventId);
@@ -296,9 +292,7 @@ void handleAddAttendeeToEvent(const json& input) {
         std::cout << error.dump() << std::endl;
         return;
     }
-    std::cerr<<event<<std::endl;
     event->addAttendee(attendeeId);
-    std::cerr<<event<<std::endl;
     json result;
     result["success"] = true;
     result["event"] = event->toJson();
@@ -327,13 +321,11 @@ void handleRemoveAttendeeFromEvent(const json& input) {
 
 /** Enables or disables reminder notifications for one attendee on an event. */
 void handleToggleNotification(const json& input) {
-    std::cerr<<input<<std::endl;
     std::string eventId = input["eventId"];
     std::string attendeeId = input["attendeeId"];
     bool enabled = input["enabled"];
 
     auto event = globalManager.getEvent(eventId);
-    std::cerr<<event<<std::endl;
     if (!event) {
         json error;
         error["error"] = "Event not found";
@@ -373,7 +365,6 @@ void handleNotificationSent(const json& input) {
 int main() {
     std::string line;
 
-    // Keep process alive forever
     while (std::getline(std::cin, line)) {
         try {
             json request = json::parse(line);
@@ -381,7 +372,6 @@ int main() {
             std::string command = request["command"];
             json input = request.value("data", json::object());
 
-            // Route commands
             if (command == "get_all_events") {
                 handleGetAllEvents();
             } else if (command == "get_event") {
@@ -420,13 +410,7 @@ int main() {
                 handleToggleNotification(input);
             } else if (command == "notification_sent") {
                 handleNotificationSent(input);
-            }
-            
-            
-            
-            
-            
-            else {
+            } else {
                 json error;
                 error["error"] = "Unknown command: " + command;
                 std::cout << error.dump() << std::endl;
@@ -438,7 +422,6 @@ int main() {
             std::cout << error.dump() << std::endl;
         }
 
-        // 🔑 IMPORTANT: flush so Node receives response immediately
         std::cout.flush();
     }
 

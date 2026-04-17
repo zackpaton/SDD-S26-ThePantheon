@@ -11,7 +11,8 @@
 #include <nlohmann/json.hpp>
 
 /**
- * Owns all User objects keyed by Firebase uid; mirrors EventManager pattern.
+ * @file UserManager.h
+ * In-memory user registry by Firebase uid: upsert, batch read, and JSON bulk load (mirrors EventManager).
  */
 class UserManager {
 private:
@@ -38,4 +39,4 @@ public:
     int getUserCount() const { return static_cast<int>(users.size()); }
 };
 
-#endif
+#endif  // USER_MANAGER_H

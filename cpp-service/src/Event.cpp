@@ -4,8 +4,6 @@
  */
 #include "Event.h"
 #include <algorithm>
-#include <sstream>
-#include <iostream>
 
 using json = nlohmann::json;
 
@@ -82,7 +80,6 @@ json Event::toJson() const {
 
 /** Populates fields from JSON (typically from Node or load_events). */
 void Event::fromJson(const json& j) {
-    std::cerr<<"in eventJson"<<std::endl;
     id = j.value("id", "");
     title = j.value("title", "");
     description = j.value("description", "");
@@ -105,19 +102,6 @@ void Event::fromJson(const json& j) {
         notifiedAttendeeIds = j["notifiedAttendeeIds"].get<std::vector<std::string>>();
     }
 }
-
-/*
-std::string Event::getEventDetails() const {
-    std::stringstream ss;
-    ss << getEventType() << " Event: " << title;
-    if (!location.empty()) {
-        ss << " at " << location;
-    }
-    ss << " (Expected: " << expectedAttendees << ", Attending: " << getActualAttendeeCount() << ")";
-    return ss.str();
-}
-
-*/
 
 /** Basic validation: non-empty id, title, coordinator, and positive date. */
 bool Event::isValid() const {

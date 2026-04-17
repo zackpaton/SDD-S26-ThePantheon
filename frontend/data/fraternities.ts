@@ -29,5 +29,5 @@ export const fraternities = [
 
 /** Map of fraternity name to Tailwind class for quick color lookup without scanning the array. */
 export const fraternityColors: Record<string, string> = Object.fromEntries(
-  fraternities.map(f => [f.name, f.color])
+  fraternities.map(f => [f.name, f.color]),
 )

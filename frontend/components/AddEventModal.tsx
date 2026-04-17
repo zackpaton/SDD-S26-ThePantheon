@@ -44,14 +44,11 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
     startTime: "",
     endTime: "",
 
-    // Recruitment
     isFormalRush: false,
 
-    // Philanthropy
     beneficiary: "",
     fundraisingGoal: "",
 
-    // Social
     isFormal: false,
     hasAlcohol: false,
     maxCapacity: "",
@@ -74,90 +71,87 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
 
   /** Validates implicit required fields, POSTs JSON to /api/events with auth, then closes and refreshes. */
   const handleSubmit = async () => {
-  try {
-    setSubmitError("")
-    const clientErr = validateEventFormFields(form)
-    if (clientErr) {
-      setSubmitError(clientErr)
-      return
+    try {
+      setSubmitError("")
+      const clientErr = validateEventFormFields(form)
+      if (clientErr) {
+        setSubmitError(clientErr)
+        return
+      }
+
+      const convDate = `${form.date}T00:00:00-04:00`
+      const startISO = `${form.date}T${form.startTime}:00-04:00`
+      const endISO = `${form.date}T${form.endTime}:00-04:00`
+
+      const token = await auth.currentUser?.getIdToken()
+      const uid = auth.currentUser?.uid
+      if (!token || !uid) {
+        setSubmitError("You must be signed in to create an event.")
+        return
+      }
+
+      const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const coordinator = (await res.json()) as {
+        id?: string
+        fraternity?: string
+      }
+
+      const payload: CreateEventPayload = {
+        title: form.title,
+        description: form.description,
+        location: form.location,
+        eventType: form.eventType,
+        date: convDate,
+        startTime: startISO,
+        endTime: endISO,
+
+        coordinatorId: coordinator.id,
+        fraternity: coordinator.fraternity,
+      }
+
+      if (form.eventType === "Recruitment") {
+        payload.isFormalRush = form.isFormalRush
+      }
+
+      if (form.eventType === "Philanthropy") {
+        payload.beneficiary = form.beneficiary
+        payload.fundraisingGoal = Number(form.fundraisingGoal)
+      }
+
+      if (form.eventType === "Social") {
+        payload.isFormal = form.isFormal
+        payload.hasAlcohol = form.hasAlcohol
+        payload.maxCapacity = Number(form.maxCapacity)
+      }
+
+      const createRes = await fetch(`${API_ORIGIN}/api/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const body: unknown = await createRes.json().catch(() => ({}))
+      if (!createRes.ok) {
+        setSubmitError(
+          getApiErrorMessage(body, `Could not create event (${createRes.status}).`),
+        )
+        return
+      }
+
+      onCreate()
+      onClose()
+    } catch (err) {
+      console.error(err)
+      setSubmitError("Something went wrong. Please try again.")
     }
-
-    const convDate = `${form.date}T00:00:00-04:00`
-    const startISO = `${form.date}T${form.startTime}:00-04:00`
-    const endISO = `${form.date}T${form.endTime}:00-04:00`
-
-    // 🔹 Fetch coordinator profile from backend
-    const token = await auth.currentUser?.getIdToken()
-    const uid = auth.currentUser?.uid
-    if (!token || !uid) {
-      setSubmitError("You must be signed in to create an event.")
-      return
-    }
-
-    const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    const coordinator = (await res.json()) as {
-      id?: string
-      fraternity?: string
-    }
-
-    const payload: CreateEventPayload = {
-      title: form.title,
-      description: form.description,
-      location: form.location,
-      eventType: form.eventType,
-      date: convDate,
-      startTime: startISO,
-      endTime: endISO,
-
-      // 🔹 Coordinator info
-      coordinatorId: coordinator.id,
-      fraternity: coordinator.fraternity,
-    }
-
-    // Add only relevant fields
-    if (form.eventType === "Recruitment") {
-      payload.isFormalRush = form.isFormalRush
-    }
-
-    if (form.eventType === "Philanthropy") {
-      payload.beneficiary = form.beneficiary
-      payload.fundraisingGoal = Number(form.fundraisingGoal)
-    }
-
-    if (form.eventType === "Social") {
-      payload.isFormal = form.isFormal
-      payload.hasAlcohol = form.hasAlcohol
-      payload.maxCapacity = Number(form.maxCapacity)
-    }
-
-    const createRes = await fetch(`${API_ORIGIN}/api/events`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    })
-
-    const body: unknown = await createRes.json().catch(() => ({}))
-    if (!createRes.ok) {
-      setSubmitError(
-        getApiErrorMessage(body, `Could not create event (${createRes.status}).`),
-      )
-      return
-    }
-
-    onCreate()
-    onClose()
-  } catch (err) {
-    console.error(err)
-    setSubmitError("Something went wrong. Please try again.")
   }
-}
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
@@ -171,7 +165,6 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
         ) : null}
 
         <div className="flex flex-col gap-2">
-          {/* Event Type FIRST */}
           <select
             name="eventType"
             value={form.eventType}
@@ -188,7 +181,6 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
             <option>Other</option>
           </select>
 
-          {/* Base fields */}
           <input
             name="title"
             placeholder="Title"
@@ -226,8 +218,6 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
             onChange={handleChange}
             className="border p-2 rounded"
           />
-
-          {/* ===== Dynamic Fields ===== */}
 
           {form.eventType === "Recruitment" && (
             <label className="flex items-center gap-2">

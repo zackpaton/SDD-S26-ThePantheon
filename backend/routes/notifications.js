@@ -9,9 +9,7 @@ function createNotificationsRouter({ db, callCppService, transporter }) {
 
   router.get('/send', async (req, res) => {
     try {
-      console.log('here');
       const eventsResult = await callCppService('get_all_events');
-      console.log(eventsResult);
       if (!eventsResult) {
         return res.json({ success: true, sent: 0 });
       }

@@ -3,10 +3,6 @@
  * Social event subtype: formal flag, alcohol, and capacity with JSON extensions on Event.
  */
 #include "SocialEvent.h"
-#include <algorithm>
-#include <sstream>
-#include <iomanip>
-#include <iostream>
 
 using json = nlohmann::json;
 
@@ -33,40 +29,11 @@ json SocialEvent::toJson() const {
 }
 
 void SocialEvent::fromJson(const json& j) {
-    //std::cout<<"hereSocialfromJson"<<std::endl;
-    //std::cout<<j<<std::endl;
-    std::cerr<<"in social fromJson"<<std::endl;
-    std::cerr<<j<<std::endl;
     Event::fromJson(j);
-    std::cerr<<"Super event"<<std::endl;
     isFormal = j.value("isFormal", false);
     hasAlcohol = j.value("hasAlcohol", false);
     maxCapacity = j.value("maxCapacity", 0);
-    std::cerr<<"finished social fromjson"<<std::endl;
 }
-
-/*
-std::string SocialEvent::getEventDetails() const {
-    std::stringstream ss;
-    ss << Event::getEventDetails();
-    ss << "\n  Theme: " << theme;
-    if (isFormal) ss << " (Formal)";
-    if (!venue.empty()) ss << "\n  Venue: " << venue;
-    if (requiresTicket) {
-        ss << "\n  Tickets: " << ticketsSold << " / " << maxCapacity;
-        ss << " ($" << std::fixed << std::setprecision(2) << ticketPrice << " each)";
-        ss << "\n  Revenue: $" << getTotalRevenue();
-    }
-    if (!partnerSorority.empty()) {
-        ss << "\n  Partner: " << partnerSorority;
-    }
-    if (hasAlcohol) ss << "\n  21+ Event";
-    if (!plannedActivities.empty()) {
-        ss << "\n  Activities: " << plannedActivities.size();
-    }
-    return ss.str();
-}
-*/
 
 bool SocialEvent::isValid() const {
     bool valid = Event::isValid() && maxCapacity > 0;

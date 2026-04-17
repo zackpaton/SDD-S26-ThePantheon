@@ -6,7 +6,7 @@ const express = require('express');
 /** Omits internal-only fields from C++ JSON before sending to clients. */
 function sanitizeUserForClient(u) {
   if (!u || typeof u !== 'object' || u.error) return {};
-  const { userKind, ...rest } = u;
+  const { userKind: _userKind, ...rest } = u;
   return rest;
 }
 
@@ -74,7 +74,7 @@ function createUsersRouter({ db, authenticate, callCppService }) {
       }
 
       const out = cppResult.user || merged;
-      const { userKind, id: _dropId, ...firebasePayload } = out;
+      const { userKind: _userKind2, id: _dropId, ...firebasePayload } = out;
       await db.ref(`users/${uid}`).update(firebasePayload);
 
       res.json(sanitizeUserForClient(out));

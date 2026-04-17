@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Mac-style Messages layout: conversation list + active thread; Firebase RTDB listeners when configured.
+ * Direct-messages UI: conversation list and active thread (responsive layout); Firebase RTDB listeners when configured.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
@@ -134,7 +134,7 @@ export default function ChatShell() {
       if (!database) void fetchConversationsRest(user)
       return { ok: true, chatId }
     },
-    [user, fetchConversationsRest, database],
+    [user, fetchConversationsRest],
   )
 
   useEffect(() => {
@@ -267,7 +267,9 @@ export default function ChatShell() {
     }
   }
 
-  // Deep link: /chat?peer=<uid> (e.g. from event RSVP guest profile).
+  /**
+   * Opens a thread when the URL includes `?peer=<uid>` (e.g. from an event attendee profile).
+   */
   useEffect(() => {
     const peerUid = searchParams.get("peer")
     if (!peerUid || !user) return
@@ -371,7 +373,6 @@ export default function ChatShell() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm md:flex-row">
-      {/* Sidebar — conversation list + new chat (full width on phone until a chat is open) */}
       <aside
         className={`flex w-full shrink-0 flex-col border-black/10 bg-[#f5f5f7] md:w-[min(100%,320px)] md:border-r ${
           activeChatId ? "hidden md:flex" : "flex"
@@ -457,7 +458,6 @@ export default function ChatShell() {
         </div>
       </aside>
 
-      {/* Thread */}
       <section
         className={`flex min-h-0 min-w-0 flex-1 flex-col bg-white ${
           !activeChatId ? "hidden md:flex" : "flex"

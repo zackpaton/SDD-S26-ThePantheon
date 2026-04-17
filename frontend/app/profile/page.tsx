@@ -10,17 +10,24 @@ import ChangePasswordCard from "@/components/ChangePasswordCard"
 import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
 import { onAuthStateChanged, signOut } from "firebase/auth"
-import EditProfileModal from "@/components/EditProfileModal"
+import EditProfileModal, { type UserProfile } from "@/components/EditProfileModal"
+
+/** Renders a field value or a gray “N/A” placeholder when empty. */
+function DisplayValue({ value }: { value?: string | number | null }) {
+  const isEmpty = value === undefined || value === null || value === ""
+  return (
+    <span className={isEmpty ? "text-gray-400 italic" : ""}>
+      {isEmpty ? "N/A" : value}
+    </span>
+  )
+}
 
 /** Subscribes to auth, fetches `/api/users/:uid`, and renders profile fields with edit/logout actions. */
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<any>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
-  // -----------------------------
-  // Load user & profile
-  // -----------------------------
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
@@ -45,9 +52,6 @@ export default function ProfilePage() {
     return () => unsubscribe()
   }, [])
 
-  // -----------------------------
-  // Handle logout
-  // -----------------------------
   /** Signs out of Firebase and sends the browser to /login. */
   const handleLogout = async () => {
     try {
@@ -63,16 +67,6 @@ export default function ProfilePage() {
       <PageShell>
         <p className="text-center text-lg text-neutral-800">You are not logged in.</p>
       </PageShell>
-    )
-  }
-
-  /** Renders a field value or a gray “N/A” placeholder when empty. */
-  function DisplayValue({ value }: { value?: string | number | null }) {
-    const isEmpty = value === undefined || value === null || value === ""
-    return (
-      <span className={isEmpty ? "text-gray-400 italic" : ""}>
-        {isEmpty ? "N/A" : value}
-      </span>
     )
   }
 
