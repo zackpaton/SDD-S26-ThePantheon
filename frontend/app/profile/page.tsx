@@ -78,11 +78,11 @@ export default function ProfilePage() {
 
   return (
     <PageShell>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <h1 className="mb-3 shrink-0 text-2xl font-bold sm:mb-4">Profile</h1>
+      <div className="flex min-h-0 w-full max-w-xl flex-1 flex-col self-center overflow-hidden">
+        <h1 className="mb-3 shrink-0 text-2xl font-bold text-neutral-950 sm:mb-4">Profile</h1>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-6 pb-2">
+          <div className="flex flex-col gap-6 pb-2">
             <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow sm:p-6">
               <div>
                 <span className="font-semibold">First Name: </span>
