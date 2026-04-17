@@ -6,9 +6,15 @@
 import { useState } from "react"
 import { createUserWithEmailAndPassword } from "firebase/auth"
 import { API_ORIGIN } from "@/lib/apiBase"
+import { getApiErrorMessage } from "@/lib/apiErrorMessage"
+import { firebaseAuthErrorMessage } from "@/lib/firebaseAuthErrorMessage"
 import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { fraternities } from "@/data/fraternities"
+
+function isValidEmail(s: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim())
+}
 
 /** Validates passwords, creates the auth account, syncs `/api/users`, and sends the user to the calendar. */
 export default function SignUpForm() {
@@ -19,54 +25,86 @@ export default function SignUpForm() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [role, setRole] = useState("")
   const [fraternity, setFraternity] = useState("")
+  const [formError, setFormError] = useState("")
+  const [busy, setBusy] = useState(false)
 
   const router = useRouter()
 
   /** Runs client-side checks, Firebase signup, and backend user creation in sequence. */
   const handleSignup = async () => {
+    setFormError("")
+    if (!firstName.trim()) {
+      setFormError("First name is required.")
+      return
+    }
+    if (!lastName.trim()) {
+      setFormError("Last name is required.")
+      return
+    }
+    if (!email.trim()) {
+      setFormError("Email is required.")
+      return
+    }
+    if (!isValidEmail(email)) {
+      setFormError("Enter a valid email address.")
+      return
+    }
+    if (!role) {
+      setFormError("Please select your role (guest or event coordinator).")
+      return
+    }
+    if (password !== confirmPassword) {
+      setFormError("Passwords do not match.")
+      return
+    }
+    if (password.length < 6) {
+      setFormError("Password must be at least 6 characters.")
+      return
+    }
+    if (role === "Event Coordinator" && !fraternity) {
+      setFormError("Please select your fraternity.")
+      return
+    }
+
+    setBusy(true)
     try {
-      if (password !== confirmPassword) {
-        alert("Passwords do not match")
-        return
-      }
-
-      if (password.length < 6) {
-        alert("Password must be at least 6 characters")
-        return
-      }
-
-      if (role === "Event Coordinator" && !fraternity) {
-        alert("Please select a fraternity")
-        return
-      }
-
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        email,
-        password
+        email.trim(),
+        password,
       )
 
-      console.log("✅ User created:", userCredential.user)
-
-      // Send profile data to backend
-      await fetch(`${API_ORIGIN}/api/users`, {
+      const res = await fetch(`${API_ORIGIN}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           uid: userCredential.user.uid,
-          firstName,
-          lastName,
-          email,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
           role,
           fraternity: role === "Event Coordinator" ? fraternity : null,
         }),
       })
 
+      const body: unknown = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setFormError(
+          getApiErrorMessage(
+            body,
+            "Could not save your profile. Try signing in, or contact support if this continues.",
+          ),
+        )
+        return
+      }
+
       router.push("/calendar")
     } catch (err) {
-      console.error("❌ Signup error:", err)
+      setFormError(firebaseAuthErrorMessage(err))
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -79,13 +117,24 @@ export default function SignUpForm() {
         className="mb-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-md sm:px-8 sm:pt-6 sm:pb-8"
         onSubmit={(e) => e.preventDefault()}
       >
+        {formError ? (
+          <p className="mb-4 text-sm text-red-600" role="alert">
+            {formError}
+          </p>
+        ) : null}
+
         {/* First Name */}
         <div className="mb-4">
           <input
             className={inputClass}
             type="text"
             placeholder="First Name"
-            onChange={(e) => setFirstName(e.target.value)}
+            autoComplete="given-name"
+            value={firstName}
+            onChange={(e) => {
+              setFormError("")
+              setFirstName(e.target.value)
+            }}
           />
         </div>
 
@@ -95,7 +144,12 @@ export default function SignUpForm() {
             className={inputClass}
             type="text"
             placeholder="Last Name"
-            onChange={(e) => setLastName(e.target.value)}
+            autoComplete="family-name"
+            value={lastName}
+            onChange={(e) => {
+              setFormError("")
+              setLastName(e.target.value)
+            }}
           />
         </div>
 
@@ -106,7 +160,11 @@ export default function SignUpForm() {
             type="email"
             placeholder="Email"
             autoComplete="email"
-            onChange={(e) => setEmail(e.target.value)}
+            value={email}
+            onChange={(e) => {
+              setFormError("")
+              setEmail(e.target.value)
+            }}
           />
         </div>
 
@@ -117,7 +175,11 @@ export default function SignUpForm() {
             type="password"
             placeholder="Password"
             autoComplete="new-password"
-            onChange={(e) => setPassword(e.target.value)}
+            value={password}
+            onChange={(e) => {
+              setFormError("")
+              setPassword(e.target.value)
+            }}
           />
         </div>
 
@@ -128,7 +190,11 @@ export default function SignUpForm() {
             type="password"
             placeholder="Confirm Password"
             autoComplete="new-password"
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            value={confirmPassword}
+            onChange={(e) => {
+              setFormError("")
+              setConfirmPassword(e.target.value)
+            }}
           />
         </div>
 
@@ -137,10 +203,13 @@ export default function SignUpForm() {
           <select
             className={`${inputClass} bg-white`}
             value={role}
-            onChange={(e) => setRole(e.target.value)}
+            onChange={(e) => {
+              setFormError("")
+              setRole(e.target.value)
+            }}
           >
             <option value="" disabled hidden>
-                Select Role
+              Select Role
             </option>
             <option>Guest User</option>
             <option>Event Coordinator</option>
@@ -153,10 +222,14 @@ export default function SignUpForm() {
             <select
               className={`${inputClass} bg-white`}
               value={fraternity}
-              onChange={(e) => setFraternity(e.target.value)}
+              onChange={(e) => {
+                setFormError("")
+                setFraternity(e.target.value)
+              }}
             >
-
-              <option value="" disabled hidden>Select Fraternity</option>
+              <option value="" disabled hidden>
+                Select Fraternity
+              </option>
               {fraternities.map(f => (
                 <option key={f.name}>{f.name}</option>
               ))}
@@ -167,19 +240,21 @@ export default function SignUpForm() {
         <div>
           <button
             type="button"
-            onClick={handleSignup}
-            className="min-h-[44px] w-full rounded bg-purple-500 py-2.5 font-bold text-white hover:bg-purple-700 sm:min-h-0 sm:py-2"
+            disabled={busy}
+            onClick={() => void handleSignup()}
+            className="min-h-[44px] w-full rounded bg-purple-500 py-2.5 font-bold text-white hover:bg-purple-700 disabled:opacity-60 sm:min-h-0 sm:py-2"
           >
-            Sign Up
+            {busy ? "Creating account…" : "Sign Up"}
           </button>
 
           <br />
 
           <a
             href="/login"
-            className="block font-bold text-center text-purple-500 mt-4"
+            className="mt-4 block text-center font-bold text-purple-500"
           >
-            Already have an account? <br />Login
+            Already have an account? <br />
+            Login
           </a>
         </div>
       </form>

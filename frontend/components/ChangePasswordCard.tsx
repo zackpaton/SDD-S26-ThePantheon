@@ -155,7 +155,7 @@ export default function ChangePasswordCard({ user }: { user: User }) {
       <button
         type="submit"
         disabled={busy}
-        className="min-h-[44px] w-full rounded bg-purple-400 py-2.5 text-sm font-semibold text-white hover:bg-purple-500 disabled:opacity-50 sm:min-h-0 sm:w-auto sm:px-6 sm:py-2"
+        className="min-h-[44px] w-full rounded bg-purple-500 py-2.5 text-sm font-semibold text-white hover:bg-purple-600 disabled:opacity-50 sm:min-h-0 sm:w-auto sm:px-6 sm:py-2"
       >
         {busy ? "Updating…" : "Update Password"}
       </button>

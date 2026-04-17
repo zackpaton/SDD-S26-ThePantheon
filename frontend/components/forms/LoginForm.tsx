@@ -5,6 +5,7 @@
  */
 import { useState } from "react"
 import { signInWithEmailAndPassword } from "firebase/auth"
+import { firebaseAuthErrorMessage } from "@/lib/firebaseAuthErrorMessage"
 import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 
@@ -12,21 +13,26 @@ import { useRouter } from "next/navigation"
 export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [formError, setFormError] = useState("")
   const router = useRouter()
 
   /** Signs in with Firebase and navigates to the calendar route. */
   const handleLogin = async () => {
+    setFormError("")
+    const e = email.trim()
+    if (!e) {
+      setFormError("Enter your email address.")
+      return
+    }
+    if (!password) {
+      setFormError("Enter your password.")
+      return
+    }
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      const token = await userCredential.user.getIdToken()
-
-      console.log("✅ Logged in:", userCredential.user)
-      console.log("🔥 Token:", token)
-
-      // redirect after login
+      await signInWithEmailAndPassword(auth, e, password)
       router.push("/calendar")
     } catch (err) {
-      console.error("❌ Login error:", err)
+      setFormError(firebaseAuthErrorMessage(err))
     }
   }
 
@@ -39,13 +45,23 @@ export default function LoginForm() {
         className="mb-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-md sm:px-8 sm:pt-6 sm:pb-8"
         onSubmit={(e) => e.preventDefault()}
       >
+        {formError ? (
+          <p className="mb-4 text-sm text-red-600" role="alert">
+            {formError}
+          </p>
+        ) : null}
+
         <div className="mb-4">
           <input
             className={inputClass}
             type="email"
             placeholder="Email"
             autoComplete="email"
-            onChange={(e) => setEmail(e.target.value)}
+            value={email}
+            onChange={(e) => {
+              setFormError("")
+              setEmail(e.target.value)
+            }}
           />
         </div>
 
@@ -55,30 +71,33 @@ export default function LoginForm() {
             type="password"
             placeholder="Password"
             autoComplete="current-password"
-            onChange={(e) => setPassword(e.target.value)}
+            value={password}
+            onChange={(e) => {
+              setFormError("")
+              setPassword(e.target.value)
+            }}
           />
         </div>
 
         <div>
           <button
             type="button"
-            onClick={handleLogin}
+            onClick={() => void handleLogin()}
             className="min-h-[44px] w-full rounded bg-purple-500 py-2.5 font-bold text-white hover:bg-purple-700 sm:min-h-0 sm:py-2"
           >
             Login
           </button>
 
-          <a className="block text-right text-purple-500 mt-2">
-            Forgot Password?
-          </a>
+          <a className="mt-2 block text-right text-purple-500">Forgot Password?</a>
 
           <br />
 
           <a
             href="/sign-up"
-            className="block font-bold text-center text-purple-500"
+            className="mt-4 block text-center font-bold text-purple-500"
           >
-            Don't have an account? <br />Sign up
+            Don&apos;t have an account? <br />
+            Sign up
           </a>
         </div>
       </form>

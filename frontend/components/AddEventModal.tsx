@@ -5,6 +5,8 @@
  */
 import { useState, type ChangeEvent } from "react"
 import { API_ORIGIN } from "@/lib/apiBase"
+import { getApiErrorMessage } from "@/lib/apiErrorMessage"
+import { validateEventFormFields } from "@/lib/validateEventForm"
 import { auth } from "@/lib/firebase"
 
 type CreateEventPayload = {
@@ -57,6 +59,7 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
 
   /** Updates a single form field from controlled inputs or checkboxes. */
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setSubmitError("")
     const target = e.target
     const name = target.name
     const nextValue =
@@ -73,6 +76,12 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
   const handleSubmit = async () => {
   try {
     setSubmitError("")
+    const clientErr = validateEventFormFields(form)
+    if (clientErr) {
+      setSubmitError(clientErr)
+      return
+    }
+
     const convDate = `${form.date}T00:00:00-04:00`
     const startISO = `${form.date}T${form.startTime}:00-04:00`
     const endISO = `${form.date}T${form.endTime}:00-04:00`
@@ -80,6 +89,10 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
     // 🔹 Fetch coordinator profile from backend
     const token = await auth.currentUser?.getIdToken()
     const uid = auth.currentUser?.uid
+    if (!token || !uid) {
+      setSubmitError("You must be signed in to create an event.")
+      return
+    }
 
     const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
       headers: {
@@ -130,9 +143,11 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
       body: JSON.stringify(payload),
     })
 
-    const body = (await createRes.json().catch(() => ({}))) as { error?: string }
+    const body: unknown = await createRes.json().catch(() => ({}))
     if (!createRes.ok) {
-      setSubmitError(body.error || `Could not create event (${createRes.status})`)
+      setSubmitError(
+        getApiErrorMessage(body, `Could not create event (${createRes.status}).`),
+      )
       return
     }
 

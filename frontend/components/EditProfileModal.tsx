@@ -5,6 +5,7 @@
  */
 import { useState } from "react"
 import { API_ORIGIN } from "@/lib/apiBase"
+import { getApiErrorMessage } from "@/lib/apiErrorMessage"
 import { auth } from "@/lib/firebase"
 
 /** User document fields used by this modal and returned from the API. */
@@ -31,18 +32,36 @@ interface Props {
 export default function EditProfileModal({ profile, userId, onClose, onSave }: Props) {
   const [formData, setFormData] = useState<UserProfile>({ ...profile })
   const [loading, setLoading] = useState(false)
+  const [submitError, setSubmitError] = useState("")
 
   /** Merges input/textarea changes into formData by field name. */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setSubmitError("")
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  /** Authenticated PUT of formData; surfaces errors to the console only. */
+  /** Authenticated PUT of formData; validates first/last name and surfaces API errors. */
   const handleSubmit = async () => {
+    setSubmitError("")
+    const fn = formData.firstName?.trim() ?? ""
+    const ln = formData.lastName?.trim() ?? ""
+    if (!fn) {
+      setSubmitError("First name is required.")
+      return
+    }
+    if (!ln) {
+      setSubmitError("Last name is required.")
+      return
+    }
+
+    const payload = { ...formData, firstName: fn, lastName: ln }
     setLoading(true)
     try {
       const currentUser = auth.currentUser
-      if (!currentUser) throw new Error("User not logged in")
+      if (!currentUser) {
+        setSubmitError("You are not signed in.")
+        return
+      }
       const token = await currentUser.getIdToken()
 
       const res = await fetch(`${API_ORIGIN}/api/users/${userId}`, {
@@ -51,24 +70,34 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
-      if (!res.ok) throw new Error("Failed to update profile")
-      const updatedProfile = (await res.json()) as UserProfile
+      const body: unknown = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setSubmitError(getApiErrorMessage(body, "Could not update profile."))
+        return
+      }
+      const updatedProfile = body as UserProfile
       onSave(updatedProfile)
       onClose()
-    } catch (err) {
-      console.error(err)
+    } catch {
+      setSubmitError("Something went wrong. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
-      <div className="bg-white rounded shadow-lg w-full max-w-md p-6 relative">
-        <h2 className="text-xl font-bold mb-4">Edit Profile</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="relative w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+        <h2 className="mb-4 text-xl font-bold">Edit Profile</h2>
+
+        {submitError ? (
+          <p className="mb-3 text-sm text-red-600" role="alert">
+            {submitError}
+          </p>
+        ) : null}
 
         <div className="flex flex-col gap-3">
           <div>
@@ -77,7 +106,8 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
               name="firstName"
               value={formData.firstName || ""}
               onChange={handleChange}
-              className="border rounded px-2 py-1 w-full"
+              className="w-full rounded border px-2 py-1"
+              autoComplete="given-name"
             />
           </div>
 
@@ -87,7 +117,8 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
               name="lastName"
               value={formData.lastName || ""}
               onChange={handleChange}
-              className="border rounded px-2 py-1 w-full"
+              className="w-full rounded border px-2 py-1"
+              autoComplete="family-name"
             />
           </div>
 
@@ -97,7 +128,7 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
               name="classYear"
               value={formData.classYear || ""}
               onChange={handleChange}
-              className="border rounded px-2 py-1 w-full"
+              className="w-full rounded border px-2 py-1"
             />
           </div>
 
@@ -107,7 +138,7 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
               name="major"
               value={formData.major || ""}
               onChange={handleChange}
-              className="border rounded px-2 py-1 w-full"
+              className="w-full rounded border px-2 py-1"
             />
           </div>
 
@@ -117,22 +148,24 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
               name="interests"
               value={formData.interests || ""}
               onChange={handleChange}
-              className="border rounded px-2 py-1 w-full"
+              className="w-full rounded border px-2 py-1"
             />
           </div>
         </div>
 
-        <div className="flex gap-2 mt-4">
+        <div className="mt-4 flex gap-2">
           <button
-            onClick={handleSubmit}
+            type="button"
+            onClick={() => void handleSubmit()}
             disabled={loading}
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            className="rounded bg-green-500 px-4 py-2 text-white hover:bg-green-600 disabled:opacity-60"
           >
-            {loading ? "Saving..." : "Save"}
+            {loading ? "Saving…" : "Save"}
           </button>
           <button
+            type="button"
             onClick={onClose}
-            className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+            className="rounded bg-gray-300 px-4 py-2 hover:bg-gray-400"
           >
             Cancel
           </button>
