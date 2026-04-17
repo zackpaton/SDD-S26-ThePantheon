@@ -14,7 +14,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "build-frontend": "cd ../frontend && npm install && npm run build",
+    "build-frontend": "cd ../frontend && rm -rf .next && npm install && npm run build",
     "start-all": "npm run build-frontend && node server.js"
   },
   "name": "backend",

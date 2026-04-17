@@ -21,6 +21,7 @@ set(SOURCES
     src/GuestUser.cpp
     src/EventCoordinator.cpp
     src/UserManager.cpp
+    src/EventFeedbackManager.cpp
     src/main.cpp
 )
 

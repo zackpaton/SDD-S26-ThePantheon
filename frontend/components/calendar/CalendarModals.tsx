@@ -32,7 +32,7 @@ export default function CalendarModals({ board }: { board: CalendarBoardState })
         />
       )}
 
-      {selectedEvent && showEventDetails && userId && (
+      {selectedEvent && showEventDetails && (
         <EventDetailsModal
           event={selectedEvent}
           userRole={userRole}
@@ -40,6 +40,11 @@ export default function CalendarModals({ board }: { board: CalendarBoardState })
           onClose={() => (setSelectedEvent(null), setShowEventDetails(false))}
           onEdit={() => {
             setShowEditModal(true)
+            setShowEventDetails(false)
+          }}
+          onDeleted={() => {
+            fetchEvents()
+            setSelectedEvent(null)
             setShowEventDetails(false)
           }}
         />

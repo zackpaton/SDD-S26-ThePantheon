@@ -32,9 +32,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="min-h-screen bg-purple-500">
-        <Navbar />
-        {children}
+        <div className="flex h-svh min-h-0 flex-col bg-purple-500">
+          <Navbar />
+          <main className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">
+            {children}
+          </main>
         </div>
       </body>
     </html>

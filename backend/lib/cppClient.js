@@ -14,38 +14,71 @@ cpp.stderr.on('data', (data) => {
   console.error('C++ Error:', data.toString());
 });
 
+cpp.on('error', (err) => {
+  console.error('C++ process error:', err);
+});
+
+cpp.on('close', (code, signal) => {
+  console.error(`C++ process exited (code=${code}, signal=${signal})`);
+});
+
+/**
+ * One in-flight C++ command at a time. Parallel calls were interleaving stdin writes and breaking
+ * the line-delimited request/response pairing with pendingResolvers (and could crash the child).
+ */
+let cppCallChain = Promise.resolve();
+
 let pendingResolvers = [];
 
-cpp.stdout.on('data', (data) => {
-  const lines = data.toString().trim().split('\n');
+/** Incomplete line from the last stdout chunk (long JSON is often split across multiple 'data' events). */
+let stdoutLineBuffer = '';
 
-  lines.forEach((line) => {
-    if (!line) return;
+cpp.stdout.on('data', (data) => {
+  stdoutLineBuffer += data.toString('utf8');
+
+  let newlineIndex;
+  while ((newlineIndex = stdoutLineBuffer.indexOf('\n')) >= 0) {
+    const line = stdoutLineBuffer.slice(0, newlineIndex);
+    stdoutLineBuffer = stdoutLineBuffer.slice(newlineIndex + 1);
+
+    const trimmed = line.trim();
+    if (!trimmed) continue;
 
     try {
-      const result = JSON.parse(line);
+      const result = JSON.parse(trimmed);
       const resolve = pendingResolvers.shift();
       if (resolve) resolve(result);
     } catch (err) {
-      console.error('Invalid JSON from C++:', line);
+      console.error('Invalid JSON from C++:', trimmed.slice(0, 400), err.message);
     }
-  });
+  }
 });
 
 /** Sends one command to the C++ process and returns the parsed JSON result as a Promise. */
 function callCppService(command, data = null) {
-  return new Promise((resolve, reject) => {
-    const payload = JSON.stringify({ command, data });
+  const payload = JSON.stringify({ command, data });
 
-    pendingResolvers.push(resolve);
-
-    cpp.stdin.write(`${payload}\n`, (err) => {
-      if (err) {
-        pendingResolvers.pop();
-        reject(err);
+  const operation = cppCallChain.then(() => {
+    return new Promise((resolve, reject) => {
+      if (cpp.stdin.destroyed || !cpp.stdin.writable) {
+        reject(new Error('C++ service stdin is closed'));
+        return;
       }
+      pendingResolvers.push(resolve);
+      cpp.stdin.write(`${payload}\n`, (err) => {
+        if (err) {
+          pendingResolvers.pop();
+          reject(err);
+        }
+      });
     });
   });
+
+  cppCallChain = operation.catch(() => {
+    /* keep the chain unblocked so later API calls can run */
+  });
+
+  return operation;
 }
 
 /** Formats a Date as an ISO-like string in America/New_York (used for consistent event timestamps). */
@@ -112,6 +145,19 @@ async function loadEventsToCppService() {
   }
 }
 
+/** Reads eventFeedback/* from Firebase and issues load_event_feedback for the C++ registry. */
+async function loadEventFeedbackToCppService() {
+  try {
+    const snapshot = await db.ref('eventFeedback').once('value');
+    const val = snapshot.val();
+    const feedback = val && typeof val === 'object' ? val : {};
+    return await callCppService('load_event_feedback', { feedback });
+  } catch (error) {
+    console.error('Error loading event feedback to C++ service:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   CPP_EXECUTABLE,
   cpp,
@@ -120,4 +166,5 @@ module.exports = {
   getEasternISO,
   loadUsersToCppService,
   loadEventsToCppService,
+  loadEventFeedbackToCppService,
 };

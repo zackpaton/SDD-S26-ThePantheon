@@ -84,7 +84,13 @@ export function useCalendarBoard() {
   const fetchEvents = async () => {
     try {
       const res = await fetch("http://localhost:3001/api/events")
-      const data = await res.json()
+      const data: unknown = await res.json()
+
+      if (!res.ok || !Array.isArray(data)) {
+        console.error("Failed to fetch events:", !res.ok ? res.status : "not an array", data)
+        setEvents([])
+        return
+      }
 
       const coloredEvents = (data as CalendarEvent[]).map((ev) => {
         const frat = fraternities.find(f => f.name === ev.fraternity)

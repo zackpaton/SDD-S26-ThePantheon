@@ -8,6 +8,7 @@
 #include "PhilanthropyEvent.h"
 #include "SocialEvent.h"
 #include "UserManager.h"
+#include "EventFeedbackManager.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -16,6 +17,7 @@ using json = nlohmann::json;
 
 EventManager globalManager;
 UserManager globalUserManager;
+EventFeedbackManager globalFeedbackManager;
 
 /** Writes JSON array of all in-memory events to stdout. */
 void handleGetAllEvents() {
@@ -107,11 +109,12 @@ void handleUpdateEvent(const json& input) {
     }
 }
 
-/** Removes an event by id from the in-memory store. */
+/** Removes an event by id from the in-memory store and clears its feedback rows. */
 void handleDeleteEvent(const json& input) {
     std::string id = input["id"];
     
     if (globalManager.removeEvent(id)) {
+        globalFeedbackManager.removeEventFeedback(id);
         json result;
         result["success"] = true;
         std::cout << result.dump() << std::endl;
@@ -209,6 +212,46 @@ void handleLoadEvents(const json& input) {
         error["error"] = std::string("Exception: ") + e.what();
         std::cout << error.dump() << std::endl;
     }
+}
+
+/** Bulk-loads event feedback tree from Firebase (eventFeedback/*). */
+void handleLoadEventFeedback(const json& input) {
+    try {
+        json fb = input.value("feedback", json::object());
+        globalFeedbackManager.fromJson(fb);
+        json ok;
+        ok["success"] = true;
+        std::cout << ok.dump() << std::endl;
+    } catch (const std::exception& e) {
+        json err;
+        err["error"] = std::string("Exception: ") + e.what();
+        std::cout << err.dump() << std::endl;
+    }
+}
+
+/** Coordinator view: up/down totals and guest rows (display names from UserManager). */
+void handleGetEventFeedbackCoordinator(const json& input) {
+    std::string eventId = input.value("eventId", "");
+    json result = globalFeedbackManager.getCoordinatorView(globalManager, globalUserManager, eventId);
+    std::cout << result.dump() << std::endl;
+}
+
+/** One guest's feedback row for an event. */
+void handleGetEventFeedbackGuest(const json& input) {
+    std::string eventId = input.value("eventId", "");
+    std::string userId = input.value("userId", "");
+    json result = globalFeedbackManager.getGuestView(globalManager, eventId, userId);
+    std::cout << result.dump() << std::endl;
+}
+
+/** Upserts feedback after Node validates role/RSVP/event-ended. */
+void handleUpsertEventFeedback(const json& input) {
+    std::string eventId = input.value("eventId", "");
+    std::string userId = input.value("userId", "");
+    std::string vote = input.value("vote", "");
+    std::string comment = input.value("comment", "");
+    json result = globalFeedbackManager.upsert(globalManager, eventId, userId, vote, comment);
+    std::cout << result.dump() << std::endl;
 }
 
 
@@ -351,6 +394,14 @@ int main() {
                 handleDeleteEvent(input);
             } else if (command == "load_events") {
                 handleLoadEvents(input);
+            } else if (command == "load_event_feedback") {
+                handleLoadEventFeedback(input);
+            } else if (command == "get_event_feedback_coordinator") {
+                handleGetEventFeedbackCoordinator(input);
+            } else if (command == "get_event_feedback_guest") {
+                handleGetEventFeedbackGuest(input);
+            } else if (command == "upsert_event_feedback") {
+                handleUpsertEventFeedback(input);
             } else if (command == "get_user") {
                 handleGetUser(input);
             } else if (command == "get_users_batch") {

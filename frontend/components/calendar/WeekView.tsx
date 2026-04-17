@@ -1,17 +1,21 @@
 "use client"
 
 /**
- * Week view: same weekday header row as month view; seven bordered day columns share one vertical scroll with a time gutter.
+ * Week view: sticky weekday/date header inside the scroll region (keeps columns aligned with the hour grid
+ * when a vertical scrollbar is present); time gutter + seven day columns scroll together.
  */
 import { getWeekDaysContaining } from "@/lib/dateUtils"
+import { layoutWeekDayEvents } from "@/lib/weekEventLayout"
 import type { CalendarBoardState } from "./useCalendarBoard"
-import type { CalendarEvent } from "./calendarModel"
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const
 
 const HOUR_PX = 48
 const TOTAL_MINUTES = 24 * 60
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
+
+/** Same column template for header + grid so labels align with day columns (see sticky header in scroll region). */
+const WEEK_GRID_COLS = "48px repeat(7, minmax(0, 1fr))" as const
 
 function formatHourLabel(h: number) {
   if (h === 0) return "12 AM"
@@ -26,30 +30,6 @@ function isSameDay(a: Date, b: Date) {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   )
-}
-
-function eventBlockStyle(event: CalendarEvent, day: Date): { topPct: number; heightPct: number } | null {
-  const start = new Date(event.startTime * 1000)
-  const end = new Date(event.endTime * 1000)
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return null
-
-  const ys = day.getFullYear()
-  const ms = day.getMonth()
-  const ds = day.getDate()
-  const dayStart = new Date(ys, ms, ds, 0, 0, 0, 0)
-  const dayEnd = new Date(ys, ms, ds, 23, 59, 59, 999)
-
-  if (end < dayStart || start > dayEnd) return null
-
-  const visStart = start < dayStart ? dayStart : start
-  const visEnd = end > dayEnd ? dayEnd : end
-
-  const toMin = (d: Date) => d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60
-  const startMin = toMin(visStart)
-  const endMin = toMin(visEnd)
-  const topPct = (startMin / TOTAL_MINUTES) * 100
-  const heightPct = Math.max(((endMin - startMin) / TOTAL_MINUTES) * 100, 1.25)
-  return { topPct, heightPct }
 }
 
 export default function WeekView({
@@ -67,50 +47,62 @@ export default function WeekView({
   const nowLinePct = (nowMinutes / TOTAL_MINUTES) * 100
 
   return (
-    <div className="flex-1 min-w-0">
-      {/* Align headers with day columns: spacer + Sun…Sat (same feel as month view) */}
-      <div
-        className="grid gap-1 mb-2 text-center font-semibold"
-        style={{ gridTemplateColumns: `48px repeat(7, minmax(0, 1fr))` }}
-      >
-        <div aria-hidden className="min-w-[48px]" />
-        {WEEKDAY_LABELS.map(label => (
-          <div key={label} className="text-sm">
-            {label}
-          </div>
-        ))}
-      </div>
-
-      {/* Date row — day numbers under each weekday */}
-      <div
-        className="grid gap-1 mb-1 text-center text-xs font-semibold text-black/80"
-        style={{ gridTemplateColumns: `48px repeat(7, minmax(0, 1fr))` }}
-      >
-        <div className="min-w-[48px]" />
-        {weekDays.map(day => {
-          const isToday = isSameDay(day, now)
-          return (
-            <div key={`d-${day.toISOString()}`}>
-              <span
-                className={
-                  isToday
-                    ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white"
-                    : ""
-                }
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      {/*
+        Weekday + date rows live inside the same scroll container as the hour grid so the vertical
+        scrollbar does not narrow the grid below the headers (which caused columns to look misaligned).
+        Sticky header keeps names/dates visible while scrolling the schedule.
+        h-0 flex-1: flex-basis 0 so this region gets a bounded height and overflow-y-auto can scroll
+        (otherwise the 24h grid’s min-height expands the page instead of the inner scroller).
+      */}
+      <div className="h-0 min-h-0 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]">
+        <div className="sticky top-0 z-20 border-b border-black/15 bg-purple-500 pb-2">
+          <div
+            className="grid gap-1 font-semibold text-center"
+            style={{ gridTemplateColumns: WEEK_GRID_COLS }}
+          >
+            <div aria-hidden className="min-w-[48px] shrink-0" />
+            {WEEKDAY_LABELS.map(label => (
+              <div
+                key={label}
+                className="flex min-w-0 items-center justify-center text-sm"
               >
-                {day.getDate()}
-              </span>
-            </div>
-          )
-        })}
-      </div>
+                {label}
+              </div>
+            ))}
+          </div>
 
-      {/* Single scroll: time gutter + seven day boxes move together */}
-      <div className="overflow-y-auto max-h-[min(70vh,720px)] pr-0.5">
+          <div
+            className="mt-1 grid gap-1 text-center text-xs font-semibold text-black/80"
+            style={{ gridTemplateColumns: WEEK_GRID_COLS }}
+          >
+            <div className="min-w-[48px] shrink-0" />
+            {weekDays.map(day => {
+              const isToday = isSameDay(day, now)
+              return (
+                <div
+                  key={`d-${day.toISOString()}`}
+                  className="flex min-w-0 items-center justify-center"
+                >
+                  <span
+                    className={
+                      isToday
+                        ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white"
+                        : "inline-flex min-h-[1.75rem] min-w-[1.75rem] items-center justify-center"
+                    }
+                  >
+                    {day.getDate()}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
         <div
           className="grid gap-1"
           style={{
-            gridTemplateColumns: `48px repeat(7, minmax(0, 1fr))`,
+            gridTemplateColumns: WEEK_GRID_COLS,
             minHeight: 24 * HOUR_PX,
           }}
         >
@@ -129,6 +121,7 @@ export default function WeekView({
           {weekDays.map(day => {
             const isToday = isSameDay(day, now)
             const dayEvents = getEventsForDay(day)
+            const layoutById = layoutWeekDayEvents(dayEvents, day)
 
             return (
               <div
@@ -159,7 +152,7 @@ export default function WeekView({
                   )}
 
                   {dayEvents.map(event => {
-                    const layout = eventBlockStyle(event, day)
+                    const layout = layoutById.get(event.id)
                     if (!layout) return null
                     const colorClass = event.color || "bg-gray-500"
                     return (
@@ -170,16 +163,20 @@ export default function WeekView({
                           setSelectedEvent(event)
                           setShowEventDetails(true)
                         }}
-                        className={`absolute left-0.5 right-0.5 rounded px-1 py-0.5 text-left text-white text-[10px] leading-tight shadow-sm overflow-hidden hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-blue-400 z-[5] ${colorClass}`}
+                        className={`absolute rounded px-0.5 py-0.5 text-left text-white text-[10px] leading-tight shadow-sm overflow-hidden hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-blue-400 z-[5] ${colorClass}`}
                         style={{
                           top: `${layout.topPct}%`,
                           height: `${layout.heightPct}%`,
+                          left: `calc(${layout.leftPct}% + 1px)`,
+                          width: `calc(${layout.widthPct}% - 2px)`,
                           minHeight: 18,
                         }}
-                        title={event.title}
+                        title={`${event.title} · ${event.fraternity} · ${event.eventType}`}
                       >
-                        <span className="block truncate font-semibold">{event.title}</span>
-                        <span className="block truncate text-[9px] opacity-90">
+                        <span className="block truncate font-semibold leading-tight">{event.title}</span>
+                        <span className="block truncate text-[9px] leading-tight opacity-90">{event.fraternity}</span>
+                        <span className="block truncate text-[9px] leading-tight opacity-90">{event.eventType}</span>
+                        <span className="block truncate text-[9px] leading-tight opacity-85">
                           {new Date(event.startTime * 1000).toLocaleTimeString("en-US", {
                             hour: "numeric",
                             minute: "2-digit",

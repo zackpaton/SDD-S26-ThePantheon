@@ -1,0 +1,20 @@
+{
+  "rules": {
+    "directChats": {
+      "$chatId": {
+        "messages": {
+          ".read": "auth != null && root.child('directChats').child($chatId).child('meta').child('participants').child(auth.uid).val() === true",
+          ".indexOn": ["createdAt"]
+        },
+        "meta": {
+          ".read": "auth != null && data.child('participants').child(auth.uid).val() === true"
+        }
+      }
+    },
+    "userConversations": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}

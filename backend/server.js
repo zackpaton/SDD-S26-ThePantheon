@@ -9,7 +9,7 @@ const cors = require('cors');
 const path = require('path');
 const next = require('next');
 
-const { db } = require('./lib/firebase');
+const { admin, db } = require('./lib/firebase');
 const { createTransporter } = require('./lib/email');
 const {
   CPP_EXECUTABLE,
@@ -17,12 +17,14 @@ const {
   convertEventDates,
   loadUsersToCppService,
   loadEventsToCppService,
+  loadEventFeedbackToCppService,
 } = require('./lib/cppClient');
 const { authenticate } = require('./lib/authenticate');
 const createUsersRouter = require('./routes/users');
 const createEventsRouter = require('./routes/events');
 const createNotificationsRouter = require('./routes/notifications');
 const createStatisticsRouter = require('./routes/statistics');
+const createChatsRouter = require('./routes/chats');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -41,6 +43,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/users', createUsersRouter({ db, authenticate, callCppService }));
+app.use('/api/chats', createChatsRouter({ db, authenticate, admin }));
 app.use(
   '/api/events',
   createEventsRouter({
@@ -82,6 +85,8 @@ nextApp.prepare().then(() => {
       console.log('✅ Initial users loaded into C++ service');
       await loadEventsToCppService();
       console.log('✅ Initial events loaded into C++ service');
+      await loadEventFeedbackToCppService();
+      console.log('✅ Initial event feedback loaded into C++ service');
     } catch (err) {
       console.error('❌ Failed initial load:', err);
     }

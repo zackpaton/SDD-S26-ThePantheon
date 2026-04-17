@@ -3,9 +3,10 @@
 /**
  * Read-only event detail sheet with coordinator tools (edit, RSVP counts) and guest RSVP / notification toggles.
  */
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useSyncExternalStore } from "react"
 import { auth } from "@/lib/firebase"
 import type { CalendarEvent } from "@/components/calendar/MonthView"
+import EventFeedbackPanel from "@/components/EventFeedbackPanel"
 
 interface EventDetailsModalProps {
   event: CalendarEvent
@@ -13,6 +14,8 @@ interface EventDetailsModalProps {
   userId: string | null
   onClose: () => void
   onEdit?: () => void
+  /** Called after the server deletes the event (C++ + Firebase). */
+  onDeleted?: () => void
 }
 
 /** Loads attendee display names, keeps RSVP/notification UI in sync with the event payload, and calls backend PUT routes. */
@@ -21,11 +24,20 @@ export default function EventDetailsModal({
   userRole,
   userId,
   onClose,
-  onEdit
+  onEdit,
+  onDeleted,
 }: EventDetailsModalProps) {
   const [rsvpStatus, setRsvpStatus] = useState<boolean>(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false)
   const [attendeeNames, setAttendeeNames] = useState<string[]>([])
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setShowDeleteConfirm(false)
+    setDeleteError(null)
+  }, [event.id])
 
   // -----------------------------
   // Sync RSVP / notification toggles from event + user (deferred to avoid sync setState in effect)
@@ -123,12 +135,56 @@ export default function EventDetailsModal({
   const isCoordinatorOwner =
     userRole === "Event Coordinator" && event.coordinatorId === userId
 
+  /** Wall clock for RSVP cutoff; external store pattern avoids impure Date.now() in render. */
+  const nowUnixSec = useSyncExternalStore(
+    (onStoreChange) => {
+      const id = window.setInterval(onStoreChange, 30_000)
+      return () => window.clearInterval(id)
+    },
+    () => Math.floor(Date.now() / 1000),
+    () => 0,
+  )
+
+  const eventHasEnded =
+    typeof event.endTime === "number" && nowUnixSec >= event.endTime
+
+  /** Deletes via backend (C++ first, then Firebase). Requires confirmation. */
+  const handleConfirmDelete = async () => {
+    setDeleteError(null)
+    setDeleteBusy(true)
+    try {
+      const token = await auth.currentUser?.getIdToken()
+      const res = await fetch(`http://localhost:3001/api/events/${event.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setDeleteError(
+          typeof data.error === "string"
+            ? data.error
+            : "Could not delete this event.",
+        )
+        return
+      }
+      setShowDeleteConfirm(false)
+      onDeleted?.()
+    } catch (err) {
+      console.error("Delete event failed:", err)
+      setDeleteError("Network error — try again.")
+    } finally {
+      setDeleteBusy(false)
+    }
+  }
+
   // -----------------------------
   // Render
   // -----------------------------
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded shadow-lg p-6 max-w-md w-full relative">
+      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded bg-white p-6 shadow-lg">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -188,12 +244,63 @@ export default function EventDetailsModal({
         {/* Coordinator view */}
         {isCoordinatorOwner && (
           <>
-            <button
-              onClick={onEdit}
-              className="mb-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full"
-            >
-              Edit Event
-            </button>
+            {!eventHasEnded && (
+              <>
+                <button
+                  onClick={onEdit}
+                  className="mb-2 w-full rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+                >
+                  Edit Event
+                </button>
+                {!showDeleteConfirm ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteError(null)
+                      setShowDeleteConfirm(true)
+                    }}
+                    className="mb-2 w-full rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+                  >
+                    Delete event
+                  </button>
+                ) : (
+                  <div className="mb-3 rounded border border-red-200 bg-red-50 p-3">
+                    <p className="mb-2 text-sm text-neutral-800">
+                      Delete this event permanently? This cannot be undone.
+                    </p>
+                    {deleteError && (
+                      <p className="mb-2 text-sm text-red-700">{deleteError}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={deleteBusy}
+                        onClick={() => {
+                          setShowDeleteConfirm(false)
+                          setDeleteError(null)
+                        }}
+                        className="flex-1 rounded border border-neutral-300 bg-white px-3 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deleteBusy}
+                        onClick={handleConfirmDelete}
+                        className="flex-1 rounded bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {deleteBusy ? "Deleting…" : "Delete permanently"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+            {eventHasEnded && (
+              <p className="mb-2 text-sm text-neutral-600">
+                This event has ended — editing is no longer available.
+              </p>
+            )}
 
             <div className="text-sm mb-2">
               <span className="font-semibold">RSVPs: </span>
@@ -209,11 +316,15 @@ export default function EventDetailsModal({
                 ))}
               </div>
             )}
+
+            {eventHasEnded && (
+              <EventFeedbackPanel mode="coordinator" eventId={event.id} show />
+            )}
           </>
         )}
 
-        {/* Guest view */}
-        {userRole === "Guest User" && (
+        {/* Guest view — RSVP only for upcoming / in-progress events */}
+        {userRole === "Guest User" && !eventHasEnded && (
           <>
             <button
               onClick={handleRSVP}
@@ -233,6 +344,18 @@ export default function EventDetailsModal({
                 />
                 Notify me 1 hour before
               </label>
+            )}
+          </>
+        )}
+
+        {userRole === "Guest User" && eventHasEnded && (
+          <>
+            <p className="text-sm text-neutral-600">
+              This event has ended
+              {rsvpStatus ? " — you RSVP'd." : " — you did not RSVP."}
+            </p>
+            {rsvpStatus && userId && (
+              <EventFeedbackPanel mode="guest" eventId={event.id} show />
             )}
           </>
         )}

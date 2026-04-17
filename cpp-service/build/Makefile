@@ -177,6 +177,30 @@ src/EventCoordinator.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/EventCoordinator.cpp.s
 .PHONY : src/EventCoordinator.cpp.s
 
+src/EventFeedbackManager.o: src/EventFeedbackManager.cpp.o
+.PHONY : src/EventFeedbackManager.o
+
+# target to build an object file
+src/EventFeedbackManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/EventFeedbackManager.cpp.o
+.PHONY : src/EventFeedbackManager.cpp.o
+
+src/EventFeedbackManager.i: src/EventFeedbackManager.cpp.i
+.PHONY : src/EventFeedbackManager.i
+
+# target to preprocess a source file
+src/EventFeedbackManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/EventFeedbackManager.cpp.i
+.PHONY : src/EventFeedbackManager.cpp.i
+
+src/EventFeedbackManager.s: src/EventFeedbackManager.cpp.s
+.PHONY : src/EventFeedbackManager.s
+
+# target to generate assembly for a file
+src/EventFeedbackManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/calendar_service.dir/build.make CMakeFiles/calendar_service.dir/src/EventFeedbackManager.cpp.s
+.PHONY : src/EventFeedbackManager.cpp.s
+
 src/EventManager.o: src/EventManager.cpp.o
 .PHONY : src/EventManager.o
 
@@ -384,6 +408,9 @@ help:
 	@echo "... src/EventCoordinator.o"
 	@echo "... src/EventCoordinator.i"
 	@echo "... src/EventCoordinator.s"
+	@echo "... src/EventFeedbackManager.o"
+	@echo "... src/EventFeedbackManager.i"
+	@echo "... src/EventFeedbackManager.s"
 	@echo "... src/EventManager.o"
 	@echo "... src/EventManager.i"
 	@echo "... src/EventManager.s"

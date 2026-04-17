@@ -29,7 +29,7 @@ export default function CalendarSidebar({ board }: { board: CalendarBoardState }
     "border border-black rounded bg-purple-400 p-2 text-left flex justify-between items-center cursor-pointer text-black hover:bg-purple-500 transition-colors"
 
   return (
-    <div className="w-56 flex flex-col gap-4 relative shrink-0">
+    <div className="relative flex w-56 shrink-0 flex-col gap-4 self-stretch">
       <div className="flex flex-col text-sm font-medium relative">
         <button
           type="button"

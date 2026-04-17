@@ -54,6 +54,42 @@ async function findFraternityTimeConflict(callCppService, { fraternity, startUni
   return null;
 }
 
+/** Feedback only after the event has ended (inverse of RSVP window). */
+async function rejectIfEventNotEnded(callCppService, eventId) {
+  const ev = await callCppService('get_event', { id: eventId });
+  if (ev.error) {
+    return { message: 'Event not found', status: 404 };
+  }
+  const endUnix = eventTimeToUnix(ev.endTime);
+  if (endUnix == null) {
+    return { message: 'Invalid event', status: 400 };
+  }
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (nowSec < endUnix) {
+    return { message: 'Feedback is only available after the event has ended', status: 403 };
+  }
+  return null;
+}
+
+/**
+ * Blocks RSVP / un-RSVP / notification toggles after the event end (authoritative via C++ get_event).
+ */
+async function rejectIfEventEnded(callCppService, eventId) {
+  const ev = await callCppService('get_event', { id: eventId });
+  if (ev.error) {
+    return { message: 'Event not found', status: 404 };
+  }
+  const endUnix = eventTimeToUnix(ev.endTime);
+  if (endUnix == null) {
+    return { message: 'Invalid event', status: 400 };
+  }
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (nowSec >= endUnix) {
+    return { message: 'This event has already ended', status: 403 };
+  }
+  return null;
+}
+
 /** Express router for /api/events — coordinates Firebase and callCppService for each operation. */
 function createEventsRouter({ db, authenticate, callCppService, convertEventDates }) {
   const router = express.Router();
@@ -169,6 +205,12 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
         return res.status(403).json({ error: 'You can only edit events hosted by your fraternity' });
       }
 
+      const endUnix = eventTimeToUnix(existing.endTime);
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (endUnix != null && nowSec >= endUnix) {
+        return res.status(403).json({ error: 'Cannot edit an event that has already ended' });
+      }
+
       const eventData = {
         ...req.body,
         coordinatorId: req.user.uid,
@@ -209,12 +251,48 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
     }
   });
 
-  router.delete('/:id', async (req, res) => {
+  router.delete('/:id', authenticate, async (req, res) => {
     try {
-      const result = await callCppService('delete_event', { id: req.params.id });
+      const eventId = req.params.id;
+
+      const userResult = await callCppService('get_user', { id: req.user.uid });
+      const userData = userResult.error ? {} : userResult;
+      if (userData.role !== 'Event Coordinator') {
+        return res.status(403).json({ error: 'Only event coordinators can delete events' });
+      }
+
+      const fraternity = userData.fraternity || null;
+      if (!fraternity) {
+        return res.status(400).json({ error: 'Your profile must include a fraternity' });
+      }
+
+      const existingResult = await callCppService('get_event', { id: eventId });
+      if (existingResult.error) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+      const existing = existingResult;
+      if (existing.coordinatorId !== req.user.uid) {
+        return res.status(403).json({ error: 'Only the hosting coordinator can delete this event' });
+      }
+      if (existing.fraternity !== fraternity) {
+        return res.status(403).json({ error: 'You can only delete events hosted by your fraternity' });
+      }
+
+      const endUnix = eventTimeToUnix(existing.endTime);
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (endUnix != null && nowSec >= endUnix) {
+        return res.status(403).json({ error: 'Cannot delete an event that has already ended' });
+      }
+
+      const result = await callCppService('delete_event', { id: eventId });
+
+      if (result.error) {
+        return res.status(400).json(result);
+      }
 
       if (result.success) {
-        await db.ref(`events/${req.params.id}`).remove();
+        await db.ref(`events/${eventId}`).remove();
+        await db.ref(`eventFeedback/${eventId}`).remove();
       }
 
       res.json(result);
@@ -226,6 +304,11 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
 
   router.put('/:id/rsvp', authenticate, async (req, res) => {
     try {
+      const ended = await rejectIfEventEnded(callCppService, req.params.id);
+      if (ended) {
+        return res.status(ended.status).json({ error: ended.message });
+      }
+
       console.log('handling rsvp');
       const rsvpData = {
         eventId: req.params.id,
@@ -251,6 +334,11 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
 
   router.put('/:id/unrsvp', authenticate, async (req, res) => {
     try {
+      const ended = await rejectIfEventEnded(callCppService, req.params.id);
+      if (ended) {
+        return res.status(ended.status).json({ error: ended.message });
+      }
+
       console.log('handling unrsvp');
       const rsvpData = {
         eventId: req.params.id,
@@ -274,6 +362,11 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
 
   router.put('/:id/notifications', authenticate, async (req, res) => {
     try {
+      const ended = await rejectIfEventEnded(callCppService, req.params.id);
+      if (ended) {
+        return res.status(ended.status).json({ error: ended.message });
+      }
+
       const { enabled } = req.body;
 
       const payload = {
@@ -294,6 +387,108 @@ function createEventsRouter({ db, authenticate, callCppService, convertEventDate
       res.json(result);
     } catch (error) {
       console.error('Error updating event:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  const FEEDBACK_PATH = (eventId) => `eventFeedback/${eventId}`;
+  const MAX_COMMENT_LEN = 2000;
+
+  /** GET: coordinator — C++ aggregate + rows; guest — C++ myFeedback only (Firebase not used for reads). */
+  router.get('/:id/feedback', authenticate, async (req, res) => {
+    try {
+      const eventId = req.params.id;
+      const ev = await callCppService('get_event', { id: eventId });
+      if (ev.error) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+
+      const uid = req.user.uid;
+      const isOwner = ev.coordinatorId === uid;
+
+      if (isOwner) {
+        const cpp = await callCppService('get_event_feedback_coordinator', { eventId });
+        if (cpp.error) {
+          return res.status(404).json(cpp);
+        }
+        return res.json(cpp);
+      }
+
+      const userSnap = await db.ref(`users/${uid}`).once('value');
+      const profile = userSnap.val() || {};
+      if (profile.role !== 'Guest User') {
+        return res.status(403).json({ error: 'Only guests who attended can view personal feedback' });
+      }
+
+      const attendeeIds = Array.isArray(ev.attendeeIds) ? ev.attendeeIds : [];
+      if (!attendeeIds.includes(uid)) {
+        return res.status(403).json({ error: 'Only guests who RSVP\'d can access feedback' });
+      }
+
+      const cpp = await callCppService('get_event_feedback_guest', { eventId, userId: uid });
+      if (cpp.error) {
+        return res.status(404).json(cpp);
+      }
+      return res.json(cpp);
+    } catch (error) {
+      console.error('Error reading feedback:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  /** PUT: validate guest + RSVP + ended, then C++ upsert; Firebase mirrors after success. */
+  router.put('/:id/feedback', authenticate, async (req, res) => {
+    try {
+      const eventId = req.params.id;
+      const notEnded = await rejectIfEventNotEnded(callCppService, eventId);
+      if (notEnded) {
+        return res.status(notEnded.status).json({ error: notEnded.message });
+      }
+
+      const ev = await callCppService('get_event', { id: eventId });
+      if (ev.error) {
+        return res.status(404).json({ error: 'Event not found' });
+      }
+
+      const uid = req.user.uid;
+      const userSnap = await db.ref(`users/${uid}`).once('value');
+      const profile = userSnap.val() || {};
+      if (profile.role !== 'Guest User') {
+        return res.status(403).json({ error: 'Only guest users can submit feedback' });
+      }
+
+      const attendeeIds = Array.isArray(ev.attendeeIds) ? ev.attendeeIds : [];
+      if (!attendeeIds.includes(uid)) {
+        return res.status(403).json({ error: 'You must have RSVP\'d to leave feedback' });
+      }
+
+      const { vote, comment } = req.body || {};
+      if (vote !== 'up' && vote !== 'down') {
+        return res.status(400).json({ error: 'vote must be "up" or "down"' });
+      }
+
+      let text = typeof comment === 'string' ? comment.trim() : '';
+      if (text.length > MAX_COMMENT_LEN) {
+        return res.status(400).json({ error: `Comment must be at most ${MAX_COMMENT_LEN} characters` });
+      }
+
+      const cpp = await callCppService('upsert_event_feedback', {
+        eventId,
+        userId: uid,
+        vote,
+        comment: text,
+      });
+
+      if (cpp.error || !cpp.success) {
+        return res.status(400).json(cpp.error ? cpp : { error: 'Failed to save feedback in calendar service' });
+      }
+
+      const payload = cpp.feedback;
+      await db.ref(`${FEEDBACK_PATH(eventId)}/${uid}`).set(payload);
+
+      res.json({ success: true, feedback: payload });
+    } catch (error) {
+      console.error('Error saving feedback:', error);
       res.status(500).json({ error: error.message });
     }
   });
