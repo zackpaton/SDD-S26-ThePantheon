@@ -5,6 +5,7 @@
  */
 import { useState } from "react"
 import { createUserWithEmailAndPassword } from "firebase/auth"
+import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 import { fraternities } from "@/data/fraternities"
@@ -48,7 +49,7 @@ export default function SignUpForm() {
       console.log("✅ User created:", userCredential.user)
 
       // Send profile data to backend
-      await fetch("http://localhost:3001/api/users", {
+      await fetch(`${API_ORIGIN}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -69,16 +70,19 @@ export default function SignUpForm() {
     }
   }
 
+  const inputClass =
+    "w-full rounded border border-gray-300 px-3 py-2.5 text-base text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:py-2 sm:text-sm"
+
   return (
-    <div className="flex items-center justify-center h-screen">
+    <div className="flex min-h-[100dvh] items-center justify-center px-4 py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <form
-        className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-80"
+        className="mb-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-md sm:px-8 sm:pt-6 sm:pb-8"
         onSubmit={(e) => e.preventDefault()}
       >
         {/* First Name */}
         <div className="mb-4">
           <input
-            className="shadow border rounded w-full py-2 px-3 text-gray-700"
+            className={inputClass}
             type="text"
             placeholder="First Name"
             onChange={(e) => setFirstName(e.target.value)}
@@ -88,7 +92,7 @@ export default function SignUpForm() {
         {/* Last Name */}
         <div className="mb-4">
           <input
-            className="shadow border rounded w-full py-2 px-3 text-gray-700"
+            className={inputClass}
             type="text"
             placeholder="Last Name"
             onChange={(e) => setLastName(e.target.value)}
@@ -98,9 +102,10 @@ export default function SignUpForm() {
         {/* Email */}
         <div className="mb-4">
           <input
-            className="shadow border rounded w-full py-2 px-3 text-gray-700"
+            className={inputClass}
             type="email"
             placeholder="Email"
+            autoComplete="email"
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
@@ -108,9 +113,10 @@ export default function SignUpForm() {
         {/* Password */}
         <div className="mb-4">
           <input
-            className="shadow border rounded w-full py-2 px-3 text-gray-700"
+            className={inputClass}
             type="password"
             placeholder="Password"
+            autoComplete="new-password"
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
@@ -118,9 +124,10 @@ export default function SignUpForm() {
         {/* Confirm Password */}
         <div className="mb-4">
           <input
-            className="shadow border rounded w-full py-2 px-3 text-gray-700"
+            className={inputClass}
             type="password"
             placeholder="Confirm Password"
+            autoComplete="new-password"
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </div>
@@ -128,7 +135,7 @@ export default function SignUpForm() {
         {/* Role Dropdown */}
         <div className="mb-4">
           <select
-            className="shadow border rounded w-full py-2 px-3 text-gray-700"
+            className={`${inputClass} bg-white`}
             value={role}
             onChange={(e) => setRole(e.target.value)}
           >
@@ -144,7 +151,7 @@ export default function SignUpForm() {
         {role === "Event Coordinator" && (
           <div className="mb-4">
             <select
-              className="shadow border rounded w-full py-2 px-3 text-gray-700"
+              className={`${inputClass} bg-white`}
               value={fraternity}
               onChange={(e) => setFraternity(e.target.value)}
             >
@@ -159,8 +166,9 @@ export default function SignUpForm() {
 
         <div>
           <button
+            type="button"
             onClick={handleSignup}
-            className="w-full bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 rounded"
+            className="min-h-[44px] w-full rounded bg-purple-500 py-2.5 font-bold text-white hover:bg-purple-700 sm:min-h-0 sm:py-2"
           >
             Sign Up
           </button>

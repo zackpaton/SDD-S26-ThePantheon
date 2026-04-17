@@ -49,12 +49,12 @@ export default function CalendarHeader({
     "cursor-pointer px-2 py-1 border border-black rounded bg-purple-400 text-black hover:bg-purple-500 transition-colors"
 
   return (
-    <div className="relative flex items-center mb-4">
-      <div className="flex gap-2">
+    <div className="mb-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 sm:mb-4">
+      <div className="flex gap-1 sm:gap-2">
         <button
           type="button"
           onClick={goPrev}
-          className={btnBase}
+          className={`${btnBase} min-h-10 min-w-10 px-2 py-2 sm:min-h-0 sm:min-w-0`}
           aria-label={view === "month" ? "Previous month" : "Previous week"}
         >
           ◀
@@ -62,29 +62,33 @@ export default function CalendarHeader({
         <button
           type="button"
           onClick={goNext}
-          className={btnBase}
+          className={`${btnBase} min-h-10 min-w-10 px-2 py-2 sm:min-h-0 sm:min-w-0`}
           aria-label={view === "month" ? "Next month" : "Next week"}
         >
           ▶
         </button>
       </div>
 
-      <div className="absolute left-1/2 max-w-[70%] -translate-x-1/2 transform text-center">
-        <h2 className="text-lg font-bold">{title}</h2>
-      </div>
+      <h2 className="min-w-0 truncate px-1 text-center text-xs font-bold leading-tight sm:text-lg">
+        {title}
+      </h2>
 
-      <div className="ml-auto flex gap-2">
+      <div className="flex justify-end gap-1 sm:gap-2">
         <button
           type="button"
           onClick={() => setView("month")}
-          className={`${btnBase} ${view === "month" ? "font-bold ring-2 ring-black ring-offset-2 ring-offset-purple-500" : ""}`}
+          className={`${btnBase} min-h-10 shrink-0 px-2 py-1.5 text-xs sm:min-h-0 sm:px-2 sm:py-1 sm:text-sm ${
+            view === "month" ? "font-bold ring-2 ring-black ring-offset-2 ring-offset-purple-500" : ""
+          }`}
         >
           Month
         </button>
         <button
           type="button"
           onClick={() => setView("week")}
-          className={`${btnBase} ${view === "week" ? "font-bold ring-2 ring-black ring-offset-2 ring-offset-purple-500" : ""}`}
+          className={`${btnBase} min-h-10 shrink-0 px-2 py-1.5 text-xs sm:min-h-0 sm:px-2 sm:py-1 sm:text-sm ${
+            view === "week" ? "font-bold ring-2 ring-black ring-offset-2 ring-offset-purple-500" : ""
+          }`}
         >
           Week
         </button>

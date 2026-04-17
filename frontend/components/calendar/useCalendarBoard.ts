@@ -4,6 +4,7 @@
  * Shared state for month and week calendar views: auth, events, filters, and event detail modals.
  */
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react"
+import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
 import { fraternities } from "@/data/fraternities"
 import { eventTypes as allEventTypes } from "@/data/eventTypes"
@@ -35,7 +36,7 @@ export function useCalendarBoard() {
         const token = await currentUser.getIdToken()
         const uid = currentUser.uid
 
-        const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+        const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -83,7 +84,7 @@ export function useCalendarBoard() {
 
   const fetchEvents = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/events")
+      const res = await fetch(`${API_ORIGIN}/api/events`)
       const data: unknown = await res.json()
 
       if (!res.ok || !Array.isArray(data)) {

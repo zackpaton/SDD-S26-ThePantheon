@@ -30,34 +30,40 @@ export default function LoginForm() {
     }
   }
 
+  const inputClass =
+    "w-full rounded border border-gray-300 px-3 py-2.5 text-base text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 sm:py-2 sm:text-sm"
+
   return (
-    <div className="flex items-center justify-center h-screen">
+    <div className="flex min-h-[100dvh] items-center justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-8">
       <form
-        className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4"
+        className="mb-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-md sm:px-8 sm:pt-6 sm:pb-8"
         onSubmit={(e) => e.preventDefault()}
       >
         <div className="mb-4">
           <input
-            className="shadow border rounded w-full py-2 px-3 text-gray-700"
+            className={inputClass}
             type="email"
             placeholder="Email"
+            autoComplete="email"
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
         <div className="mb-6">
           <input
-            className="shadow border rounded w-full py-2 px-3 text-gray-700"
+            className={inputClass}
             type="password"
             placeholder="Password"
+            autoComplete="current-password"
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
 
         <div>
           <button
+            type="button"
             onClick={handleLogin}
-            className="w-full bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 rounded"
+            className="min-h-[44px] w-full rounded bg-purple-500 py-2.5 font-bold text-white hover:bg-purple-700 sm:min-h-0 sm:py-2"
           >
             Login
           </button>

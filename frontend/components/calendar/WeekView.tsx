@@ -5,6 +5,7 @@
  * when a vertical scrollbar is present); time gutter + seven day columns scroll together.
  */
 import { getWeekDaysContaining } from "@/lib/dateUtils"
+import EventTypeIcon from "@/components/EventTypeIcon"
 import { layoutWeekDayEvents } from "@/lib/weekEventLayout"
 import type { CalendarBoardState } from "./useCalendarBoard"
 
@@ -173,15 +174,20 @@ export default function WeekView({
                         }}
                         title={`${event.title} · ${event.fraternity} · ${event.eventType}`}
                       >
-                        <span className="block truncate font-semibold leading-tight">{event.title}</span>
-                        <span className="block truncate text-[9px] leading-tight opacity-90">{event.fraternity}</span>
-                        <span className="block truncate text-[9px] leading-tight opacity-90">{event.eventType}</span>
-                        <span className="block truncate text-[9px] leading-tight opacity-85">
-                          {new Date(event.startTime * 1000).toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                        <div className="relative h-full min-h-0 w-full">
+                          <span className="pointer-events-none absolute right-0 top-0 z-[1] text-white drop-shadow-sm">
+                            <EventTypeIcon eventType={event.eventType} className="h-3 w-3" />
+                          </span>
+                          <span className="block truncate pr-3.5 font-semibold leading-tight">{event.title}</span>
+                          <span className="block truncate pr-3.5 text-[9px] leading-tight opacity-90">{event.fraternity}</span>
+                          <span className="block truncate pr-3.5 text-[9px] leading-tight opacity-90">{event.eventType}</span>
+                          <span className="block truncate pr-3.5 text-[9px] leading-tight opacity-85">
+                            {new Date(event.startTime * 1000).toLocaleTimeString("en-US", {
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
                       </button>
                     )
                   })}

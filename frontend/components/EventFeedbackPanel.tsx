@@ -4,9 +4,8 @@
  * Post-event feedback: guests submit up/down + comment; coordinators see totals and RSVP guest comments.
  */
 import { useCallback, useEffect, useState } from "react"
+import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
-
-const API_BASE = "http://localhost:3001"
 
 export type CoordinatorFeedbackPayload = {
   role: "coordinator"
@@ -51,7 +50,7 @@ export default function EventFeedbackPanel(props: Props) {
   const loadCoordinator = useCallback(async () => {
     const token = await auth.currentUser?.getIdToken()
     if (!token) return
-    const res = await fetch(`${API_BASE}/api/events/${props.eventId}/feedback`, {
+    const res = await fetch(`${API_ORIGIN}/api/events/${props.eventId}/feedback`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json().catch(() => ({}))
@@ -63,7 +62,7 @@ export default function EventFeedbackPanel(props: Props) {
   const loadGuest = useCallback(async () => {
     const token = await auth.currentUser?.getIdToken()
     if (!token) return
-    const res = await fetch(`${API_BASE}/api/events/${props.eventId}/feedback`, {
+    const res = await fetch(`${API_ORIGIN}/api/events/${props.eventId}/feedback`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json().catch(() => ({}))
@@ -121,7 +120,7 @@ export default function EventFeedbackPanel(props: Props) {
     setError(null)
     try {
       const token = await auth.currentUser?.getIdToken()
-      const res = await fetch(`${API_BASE}/api/events/${props.eventId}/feedback`, {
+      const res = await fetch(`${API_ORIGIN}/api/events/${props.eventId}/feedback`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

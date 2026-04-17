@@ -4,6 +4,8 @@
  * Profile route: shows the signed-in user’s backend profile, logout, and optional edit modal.
  */
 import { useEffect, useState } from "react"
+import PageShell from "@/components/PageShell"
+import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
 import { onAuthStateChanged, signOut } from "firebase/auth"
 import EditProfileModal from "@/components/EditProfileModal"
@@ -28,7 +30,7 @@ export default function ProfilePage() {
 
       try {
         const token = await currentUser.getIdToken()
-        const res = await fetch(`https://sdd-s26-thepantheon.onrender.com/api/users/${currentUser.uid}`, {
+        const res = await fetch(`${API_ORIGIN}/api/users/${currentUser.uid}`, {
           headers: { Authorization: `Bearer ${token}` },
         })
         const data = await res.json()
@@ -56,9 +58,9 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-lg">You are not logged in.</p>
-      </div>
+      <PageShell>
+        <p className="text-center text-lg text-neutral-800">You are not logged in.</p>
+      </PageShell>
     )
   }
 
@@ -73,10 +75,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="p-8 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Profile</h1>
+    <PageShell>
+      <div className="mx-auto flex w-full max-w-xl flex-col">
+      <h1 className="mb-4 text-2xl font-bold sm:mb-6">Profile</h1>
 
-      <div className="bg-white shadow rounded p-6 flex flex-col gap-4">
+      <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow sm:p-6">
         <div>
           <span className="font-semibold">First Name: </span>
           <DisplayValue value={profile?.firstName} />
@@ -107,24 +110,25 @@ export default function ProfilePage() {
           {user.email}
         </div>
 
-        <div className="flex gap-2 mt-2">
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-2">
           <button
+            type="button"
             onClick={() => setShowEditModal(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            className="min-h-[44px] rounded bg-blue-500 px-4 py-2.5 text-white hover:bg-blue-600 sm:min-h-0"
           >
             Edit Profile
           </button>
 
           <button
+            type="button"
             onClick={handleLogout}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            className="min-h-[44px] rounded bg-red-500 px-4 py-2.5 text-white hover:bg-red-600 sm:min-h-0"
           >
             Logout
           </button>
         </div>
       </div>
 
-      {/* Edit Profile Modal */}
       {showEditModal && profile && user && (
         <EditProfileModal
           profile={profile}
@@ -133,6 +137,7 @@ export default function ProfilePage() {
           onSave={(updatedProfile) => setProfile(updatedProfile)}
         />
       )}
-    </div>
+      </div>
+    </PageShell>
   )
 }

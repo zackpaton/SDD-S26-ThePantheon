@@ -7,9 +7,8 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { onAuthStateChanged, type User } from "firebase/auth"
 import { onValue, ref } from "firebase/database"
+import { API_ORIGIN } from "@/lib/apiBase"
 import { auth, database } from "@/lib/firebase"
-
-const API_BASE = "http://localhost:3001"
 
 type ConversationRow = {
   chatId: string
@@ -83,7 +82,7 @@ export default function ChatShell() {
 
   const fetchConversationsRest = useCallback(async (u: User) => {
     const token = await u.getIdToken()
-    const res = await fetch(`${API_BASE}/api/chats`, {
+    const res = await fetch(`${API_ORIGIN}/api/chats`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (!res.ok) return
@@ -125,7 +124,7 @@ export default function ChatShell() {
   const fetchMessagesRest = useCallback(async (u: User, chatId: string) => {
     const token = await u.getIdToken()
     const res = await fetch(
-      `${API_BASE}/api/chats/${encodeURIComponent(chatId)}/messages`,
+      `${API_ORIGIN}/api/chats/${encodeURIComponent(chatId)}/messages`,
       { headers: { Authorization: `Bearer ${token}` } },
     )
     if (!res.ok) return
@@ -181,7 +180,7 @@ export default function ChatShell() {
     try {
       const token = await user.getIdToken()
       const res = await fetch(
-        `${API_BASE}/api/chats/lookup?email=${encodeURIComponent(q)}`,
+        `${API_ORIGIN}/api/chats/lookup?email=${encodeURIComponent(q)}`,
         { headers: { Authorization: `Bearer ${token}` } },
       )
       const data = await res.json().catch(() => ({}))
@@ -209,7 +208,7 @@ export default function ChatShell() {
     setLookupError(null)
     try {
       const token = await user.getIdToken()
-      const res = await fetch(`${API_BASE}/api/chats/open`, {
+      const res = await fetch(`${API_ORIGIN}/api/chats/open`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -242,7 +241,7 @@ export default function ChatShell() {
     try {
       const token = await user.getIdToken()
       const res = await fetch(
-        `${API_BASE}/api/chats/${encodeURIComponent(activeChatId)}/messages`,
+        `${API_ORIGIN}/api/chats/${encodeURIComponent(activeChatId)}/messages`,
         {
           method: "POST",
           headers: {
@@ -286,9 +285,13 @@ export default function ChatShell() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm">
-      {/* Sidebar — conversation list + new chat */}
-      <aside className="flex w-[min(100%,320px)] shrink-0 flex-col border-r border-black/10 bg-[#f5f5f7]">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-sm md:flex-row">
+      {/* Sidebar — conversation list + new chat (full width on phone until a chat is open) */}
+      <aside
+        className={`flex w-full shrink-0 flex-col border-black/10 bg-[#f5f5f7] md:w-[min(100%,320px)] md:border-r ${
+          activeChatId ? "hidden md:flex" : "flex"
+        }`}
+      >
         <div className="border-b border-black/10 px-3 py-3">
           <h1 className="text-lg font-semibold text-neutral-900">Messages</h1>
           <p className="mt-0.5 text-xs text-neutral-500">Search by email to start a chat</p>
@@ -301,7 +304,7 @@ export default function ChatShell() {
               onKeyDown={e => {
                 if (e.key === "Enter") void handleLookup()
               }}
-              className="min-w-0 flex-1 rounded-md border border-black/15 bg-white px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="min-w-0 flex-1 rounded-md border border-black/15 bg-white px-2 py-2 text-base outline-none focus:ring-2 focus:ring-blue-500 sm:py-1.5 sm:text-sm"
             />
             <button
               type="button"
@@ -370,15 +373,27 @@ export default function ChatShell() {
       </aside>
 
       {/* Thread */}
-      <section className="flex min-w-0 min-h-0 flex-1 flex-col bg-white">
+      <section
+        className={`flex min-h-0 min-w-0 flex-1 flex-col bg-white ${
+          !activeChatId ? "hidden md:flex" : "flex"
+        }`}
+      >
         {!activeChatId ? (
-          <div className="flex flex-1 flex-col items-center justify-center text-neutral-500">
+          <div className="flex flex-1 flex-col items-center justify-center px-4 text-center text-neutral-500">
             <p className="text-sm">Select a conversation or find someone by email</p>
           </div>
         ) : (
           <>
-            <header className="flex shrink-0 items-center border-b border-black/10 px-4 py-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+            <header className="flex shrink-0 items-center border-b border-black/10 px-3 py-3 sm:px-4">
+              <button
+                type="button"
+                aria-label="Back to conversations"
+                className="mr-2 flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg text-lg text-neutral-700 hover:bg-black/5 md:hidden"
+                onClick={() => setActiveChatId(null)}
+              >
+                ←
+              </button>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
                 {initials(activeTitle)}
               </div>
               <div className="ml-3 min-w-0">
@@ -430,7 +445,7 @@ export default function ChatShell() {
               </div>
             </div>
 
-            <footer className="shrink-0 border-t border-black/10 bg-white/90 px-3 py-2 backdrop-blur">
+            <footer className="shrink-0 border-t border-black/10 bg-white/90 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur">
               <div className="mx-auto flex max-w-3xl items-end gap-2">
                 <textarea
                   value={compose}
@@ -443,13 +458,13 @@ export default function ChatShell() {
                   }}
                   placeholder="Message"
                   rows={1}
-                  className="max-h-32 min-h-[40px] flex-1 resize-y rounded-xl border border-black/15 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  className="max-h-32 min-h-[44px] flex-1 resize-y rounded-xl border border-black/15 bg-white px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-blue-500 sm:min-h-[40px] sm:py-2 sm:text-sm"
                 />
                 <button
                   type="button"
                   disabled={sending || !compose.trim()}
                   onClick={() => void handleSend()}
-                  className="shrink-0 rounded-full bg-[#007aff] px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-40"
+                  className="min-h-[44px] shrink-0 rounded-full bg-[#007aff] px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-40 sm:min-h-0"
                 >
                   Send
                 </button>

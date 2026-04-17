@@ -4,6 +4,7 @@
  * Modal for editing an existing event: pre-fills from Unix timestamps, PUTs updates, and runs onSave on success.
  */
 import { useState, type ChangeEvent } from "react"
+import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
 
 type EditableEvent = {
@@ -120,7 +121,7 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
       const token = await auth.currentUser?.getIdToken()
         const uid = auth.currentUser?.uid
 
-        const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+        const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -159,7 +160,7 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
         payload.maxCapacity = Number(form.maxCapacity)
       }
 
-      const putRes = await fetch(`http://localhost:3001/api/events/${event.id}`, {
+      const putRes = await fetch(`${API_ORIGIN}/api/events/${event.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

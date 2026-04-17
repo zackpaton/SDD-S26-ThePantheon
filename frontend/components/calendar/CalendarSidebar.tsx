@@ -26,10 +26,10 @@ export default function CalendarSidebar({ board }: { board: CalendarBoardState }
   const allFraternities = fraternities.map(f => f.name)
 
   const filterBtn =
-    "border border-black rounded bg-purple-400 p-2 text-left flex justify-between items-center cursor-pointer text-black hover:bg-purple-500 transition-colors"
+    "border border-black rounded bg-purple-400 px-3 py-3 text-left flex justify-between items-center cursor-pointer text-black hover:bg-purple-500 transition-colors min-h-[44px] text-sm sm:p-2 sm:min-h-0"
 
   return (
-    <div className="relative flex w-56 shrink-0 flex-col gap-4 self-stretch">
+    <div className="relative flex w-full shrink-0 flex-col gap-3 self-stretch lg:w-56 lg:gap-4">
       <div className="flex flex-col text-sm font-medium relative">
         <button
           type="button"
@@ -106,7 +106,7 @@ export default function CalendarSidebar({ board }: { board: CalendarBoardState }
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="mt-auto border border-black rounded bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 transition-colors"
+          className="mt-auto min-h-[44px] rounded border border-black bg-purple-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-purple-700 sm:min-h-0 sm:py-2"
         >
           Add Event
         </button>

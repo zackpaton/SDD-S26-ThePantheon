@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react"
 
 import { generateMonthMatrix } from "@/lib/dateUtils"
+import EventTypeIcon from "@/components/EventTypeIcon"
 
 import EventItem from "@/components/EventItem"
 
@@ -114,17 +115,28 @@ export default function MonthView({
 
       {overflowDay && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="month-overflow-title"
           onClick={() => setOverflowDay(null)}
         >
           <div
-            className="flex max-h-[min(70vh,480px)] w-full max-w-sm flex-col overflow-hidden rounded-lg border-2 border-black bg-white shadow-lg"
+            className="relative flex max-h-[min(70vh,480px)] w-full max-w-sm flex-col overflow-hidden rounded-lg border-2 border-black bg-white shadow-lg"
             onClick={e => e.stopPropagation()}
           >
-            <h2 id="month-overflow-title" className="border-b border-black/15 px-4 py-3 text-base font-bold">
+            <button
+              type="button"
+              aria-label="Close"
+              className="absolute top-2 right-2 z-10 text-gray-500 hover:text-gray-700"
+              onClick={() => setOverflowDay(null)}
+            >
+              ✕
+            </button>
+            <h2
+              id="month-overflow-title"
+              className="border-b border-black/15 px-4 py-3 pr-10 text-base font-bold"
+            >
               {overflowDay.day.toLocaleDateString(undefined, {
                 weekday: "long",
                 month: "long",
@@ -143,28 +155,26 @@ export default function MonthView({
                         setSelectedEvent(ev)
                         setShowEventDetails(true)
                       }}
-                      className={`w-full rounded px-2 py-1.5 text-left text-sm text-white ${colorClass} hover:brightness-110`}
+                      className={`flex w-full items-start gap-2 rounded px-2 py-1.5 text-left text-sm text-white ${colorClass} hover:brightness-110`}
                     >
-                      <span className="block truncate font-semibold">{ev.title}</span>
-                      <span className="block text-xs opacity-90">
-                        {new Date(ev.startTime * 1000).toLocaleTimeString(undefined, {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}{" "}
-                        · {ev.fraternity}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-semibold">{ev.title}</span>
+                        <span className="block text-xs opacity-90">
+                          {new Date(ev.startTime * 1000).toLocaleTimeString(undefined, {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}{" "}
+                          · {ev.fraternity}
+                        </span>
+                      </span>
+                      <span className="pointer-events-none shrink-0 text-white drop-shadow-sm">
+                        <EventTypeIcon eventType={ev.eventType} className="h-4 w-4" />
                       </span>
                     </button>
                   </li>
                 )
               })}
             </ul>
-            <button
-              type="button"
-              className="border-t border-black/15 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-              onClick={() => setOverflowDay(null)}
-            >
-              Close
-            </button>
           </div>
         </div>
       )}

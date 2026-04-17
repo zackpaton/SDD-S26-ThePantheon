@@ -4,6 +4,7 @@
  * Modal form for coordinators to create a new calendar event (typed fields per event category) and POST to the API.
  */
 import { useState, type ChangeEvent } from "react"
+import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
 
 type CreateEventPayload = {
@@ -80,7 +81,7 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
     const token = await auth.currentUser?.getIdToken()
     const uid = auth.currentUser?.uid
 
-    const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+    const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -120,7 +121,7 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
       payload.maxCapacity = Number(form.maxCapacity)
     }
 
-    const createRes = await fetch("http://localhost:3001/api/events", {
+    const createRes = await fetch(`${API_ORIGIN}/api/events`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

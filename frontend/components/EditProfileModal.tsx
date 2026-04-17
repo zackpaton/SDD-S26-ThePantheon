@@ -4,6 +4,7 @@
  * Modal to edit the signed-in user’s profile fields and persist via PUT /api/users/:userId.
  */
 import { useState } from "react"
+import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
 
 /** User document fields used by this modal and returned from the API. */
@@ -44,7 +45,7 @@ export default function EditProfileModal({ profile, userId, onClose, onSave }: P
       if (!currentUser) throw new Error("User not logged in")
       const token = await currentUser.getIdToken()
 
-      const res = await fetch(`http://localhost:3001/api/users/${userId}`, {
+      const res = await fetch(`${API_ORIGIN}/api/users/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

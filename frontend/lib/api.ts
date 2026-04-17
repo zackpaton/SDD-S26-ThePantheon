@@ -1,7 +1,9 @@
 /**
  * REST client helpers for calendar events: maps DTOs with Unix timestamps to Date objects for the UI layer.
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { API_ORIGIN } from "./apiBase"
+
+const API_BASE_URL = `${API_ORIGIN}/api`
 
 export interface CalendarEventDTO {
   id: string;

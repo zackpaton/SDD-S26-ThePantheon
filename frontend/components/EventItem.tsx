@@ -1,26 +1,26 @@
 /**
- * Compact clickable chip showing an event title on a calendar day cell, tinted by fraternity color.
+ * Compact clickable chip for a calendar day cell: title + event-type icon on the right, tinted by fraternity color.
  */
-type Event = {
-  id: string
-  title: string
-  // other event fields as needed
-}
+import EventTypeIcon from "@/components/EventTypeIcon"
+import type { CalendarEvent } from "@/components/calendar/calendarModel"
 
 interface Props {
-  event: Event
+  event: Pick<CalendarEvent, "id" | "title" | "eventType">
   color: string
-  onClick?: () => void // <-- add optional onClick prop
+  onClick?: () => void
 }
 
-/** Renders a single truncated title bar; invokes onClick when the user selects an event. */
+/** Truncated title bar with small type icon; invokes onClick when the user selects an event. */
 export default function EventItem({ event, color, onClick }: Props) {
   return (
     <div
-      onClick={onClick} // <-- attach it here
-      className={`${color} text-white text-xs rounded px-1 py-0.5 truncate mb-1 cursor-pointer`} // cursor-pointer makes it obvious it's clickable
+      onClick={onClick}
+      className={`${color} mb-1 flex min-w-0 cursor-pointer items-center gap-0.5 rounded px-1 py-0.5 text-xs text-white`}
     >
-      {event.title}
+      <span className="min-w-0 flex-1 truncate">{event.title}</span>
+      <span className="pointer-events-none shrink-0 text-white drop-shadow-sm">
+        <EventTypeIcon eventType={event.eventType} className="h-3 w-3" />
+      </span>
     </div>
   )
 }

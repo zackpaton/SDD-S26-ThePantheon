@@ -4,6 +4,7 @@
  * Read-only event detail sheet with coordinator tools (edit, RSVP counts) and guest RSVP / notification toggles.
  */
 import React, { useState, useEffect, useSyncExternalStore } from "react"
+import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
 import type { CalendarEvent } from "@/components/calendar/MonthView"
 import EventFeedbackPanel from "@/components/EventFeedbackPanel"
@@ -69,7 +70,7 @@ export default function EventDetailsModal({
         const token = await auth.currentUser?.getIdToken()
         const names = await Promise.all(
           event.attendeeIds.map(async (uid: string) => {
-            const res = await fetch(`http://localhost:3001/api/users/${uid}`, {
+            const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
@@ -97,7 +98,7 @@ export default function EventDetailsModal({
         ? `/api/events/${event.id}/unrsvp`
         : `/api/events/${event.id}/rsvp`
 
-      await fetch(`http://localhost:3001${endpoint}`, {
+      await fetch(`${API_ORIGIN}${endpoint}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -119,7 +120,7 @@ export default function EventDetailsModal({
     setNotificationsEnabled(checked)
     try {
       const token = await auth.currentUser?.getIdToken()
-      await fetch(`http://localhost:3001/api/events/${event.id}/notifications`, {
+      await fetch(`${API_ORIGIN}/api/events/${event.id}/notifications`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -154,7 +155,7 @@ export default function EventDetailsModal({
     setDeleteBusy(true)
     try {
       const token = await auth.currentUser?.getIdToken()
-      const res = await fetch(`http://localhost:3001/api/events/${event.id}`, {
+      const res = await fetch(`${API_ORIGIN}/api/events/${event.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -183,12 +184,14 @@ export default function EventDetailsModal({
   // Render
   // -----------------------------
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded bg-white p-6 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4">
+      <div className="relative max-h-[min(90dvh,calc(100svh-1.5rem))] w-full max-w-lg overflow-y-auto overscroll-contain rounded-xl bg-white px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-11 shadow-lg sm:max-h-[90vh] sm:rounded-lg sm:p-6 sm:pb-6 sm:pt-6">
         {/* Close button */}
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+          className="absolute right-1 top-1 flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-500 hover:bg-black/5 hover:text-gray-800 sm:right-2 sm:top-2 sm:min-h-0 sm:min-w-0 sm:p-1"
+          aria-label="Close"
         >
           ✕
         </button>
@@ -236,10 +239,61 @@ export default function EventDetailsModal({
           {event.location || <span className="text-gray-400 italic">Not provided</span>}
         </div>
 
-        <div className="text-sm mb-4">
+        <div className="text-sm mb-2">
           <span className="font-semibold">Description: </span>
           {event.description || <span className="text-gray-400 italic">No description</span>}
         </div>
+
+        {event.eventType === "Recruitment" && (
+          <div className="mb-4 border-t border-black/10 pt-3 text-sm">
+            <p className="mb-2 font-semibold text-neutral-900">Recruitment details</p>
+            <div>
+              <span className="font-semibold">Formal recruitment: </span>
+              {event.isFormalRush ? "Yes" : "No"}
+            </div>
+          </div>
+        )}
+
+        {event.eventType === "Philanthropy" && (
+          <div className="mb-4 border-t border-black/10 pt-3 text-sm">
+            <p className="mb-2 font-semibold text-neutral-900">Philanthropy details</p>
+            <div className="mb-1">
+              <span className="font-semibold">Beneficiary: </span>
+              {event.beneficiary?.trim() ?? ""}
+            </div>
+            <div>
+              <span className="font-semibold">Fundraising goal: </span>
+              {new Intl.NumberFormat(undefined, {
+                style: "currency",
+                currency: "USD",
+              }).format(
+                typeof event.fundraisingGoal === "number"
+                  ? event.fundraisingGoal
+                  : Number(event.fundraisingGoal),
+              )}
+            </div>
+          </div>
+        )}
+
+        {event.eventType === "Social" && (
+          <div className="mb-4 border-t border-black/10 pt-3 text-sm">
+            <p className="mb-2 font-semibold text-neutral-900">Social event details</p>
+            <div className="mb-1">
+              <span className="font-semibold">Formal event: </span>
+              {event.isFormal ? "Yes" : "No"}
+            </div>
+            <div className="mb-1">
+              <span className="font-semibold">Has alcohol: </span>
+              {event.hasAlcohol ? "Yes" : "No"}
+            </div>
+            <div>
+              <span className="font-semibold">Maximum capacity: </span>
+              {typeof event.maxCapacity === "number"
+                ? event.maxCapacity
+                : Number(event.maxCapacity)}
+            </div>
+          </div>
+        )}
 
         {/* Coordinator view */}
         {isCoordinatorOwner && (
@@ -261,7 +315,7 @@ export default function EventDetailsModal({
                     }}
                     className="mb-2 w-full rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700"
                   >
-                    Delete event
+                    Delete Event
                   </button>
                 ) : (
                   <div className="mb-3 rounded border border-red-200 bg-red-50 p-3">
@@ -323,8 +377,8 @@ export default function EventDetailsModal({
           </>
         )}
 
-        {/* Guest view — RSVP only for upcoming / in-progress events */}
-        {userRole === "Guest User" && !eventHasEnded && (
+        {/* Guest view — RSVP only for upcoming / in-progress events (logged-in guests only) */}
+        {userRole === "Guest User" && !eventHasEnded && userId && (
           <>
             <button
               onClick={handleRSVP}
@@ -348,13 +402,21 @@ export default function EventDetailsModal({
           </>
         )}
 
-        {userRole === "Guest User" && eventHasEnded && (
+        {userRole === "Guest User" && !eventHasEnded && !userId && (
+          <p className="text-sm text-neutral-600">Please log in to RSVP.</p>
+        )}
+
+        {userRole === "Guest User" && eventHasEnded && !userId && (
+          <p className="text-sm text-neutral-600">This event has ended.</p>
+        )}
+
+        {userRole === "Guest User" && eventHasEnded && userId && (
           <>
             <p className="text-sm text-neutral-600">
               This event has ended
               {rsvpStatus ? " — you RSVP'd." : " — you did not RSVP."}
             </p>
-            {rsvpStatus && userId && (
+            {rsvpStatus && (
               <EventFeedbackPanel mode="guest" eventId={event.id} show />
             )}
           </>

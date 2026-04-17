@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * Top navigation: shows Calendar, Events, Chat, Settings, and Profile or Login based on Firebase auth state.
+ * Top navigation: scrollable links on narrow viewports, safe-area aware; Calendar, Events, Chat, Profile/Login.
  */
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -13,10 +13,8 @@ const baseNavItems = [
   { name: "Calendar", path: "/calendar" },
   { name: "Events", path: "/events" },
   { name: "Chat", path: "/chat" },
-  { name: "Settings", path: "/settings" },
 ]
 
-/** Client-only nav that subscribes to onAuthStateChanged and highlights the active route. */
 export default function Navbar() {
   const pathname = usePathname()
 
@@ -32,7 +30,6 @@ export default function Navbar() {
     return () => unsubscribe()
   }, [])
 
-  // Prevent UI flicker while Firebase loads auth state
   if (loading) return null
 
   const navItems = [
@@ -43,35 +40,37 @@ export default function Navbar() {
   ]
 
   return (
-    <nav className="w-full border-b bg-purple-500">
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/calendar" className="text-xl font-semibold">
+    <nav className="w-full shrink-0 border-b border-black/10 bg-purple-500 pt-[env(safe-area-inset-top)]">
+      <div className="mx-auto flex min-h-12 max-w-7xl items-center gap-2 px-3 sm:min-h-14 sm:px-6">
+        <Link
+          href="/calendar"
+          className="shrink-0 text-lg font-semibold tracking-tight text-black sm:text-xl"
+        >
           Greeked Out
         </Link>
 
-        {/* Nav Links */}
-        <div className="flex gap-6">
-          {navItems.map((item) => {
-            let isActive = pathname === item.path
+        <div className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center justify-end gap-2 py-1 pl-2 sm:justify-end sm:gap-5 sm:py-0 sm:pl-0">
+            {navItems.map((item) => {
+              let isActive = pathname === item.path
 
-            // Make "Login" active on both /login and /signup
-            if (item.name === "Login" && (pathname === "/login" || pathname === "/sign-up")) {
-              isActive = true
-            }
+              if (item.name === "Login" && (pathname === "/login" || pathname === "/sign-up")) {
+                isActive = true
+              }
 
-            return (
-              <Link
-                key={item.name}
-                href={item.path}
-                className={`text-sm font-medium transition-colors ${
-                  isActive ? "text-white" : "text-black hover:text-blue-500"
-                }`}
-              >
-                {item.name}
-              </Link>
-            )
-          })}
+              return (
+                <Link
+                  key={item.name}
+                  href={item.path}
+                  className={`shrink-0 whitespace-nowrap rounded-md px-2 py-2 text-xs font-medium transition-colors sm:px-0 sm:py-2 sm:text-sm ${
+                    isActive ? "text-white" : "text-black hover:text-blue-600"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              )
+            })}
+          </div>
         </div>
       </div>
     </nav>
