@@ -100,10 +100,12 @@ export default function MonthView({
                   {moreCount > 0 && (
                     <button
                       type="button"
+                      aria-label={`${moreCount} more events`}
                       onClick={() => setOverflowDay({ day, events: sorted })}
-                      className="mt-0.5 w-full rounded px-0.5 py-0.5 text-left text-[11px] font-semibold text-purple-800 hover:bg-purple-100 hover:underline"
+                      className="mt-0.5 w-full whitespace-nowrap rounded px-0.5 py-0.5 text-left text-[11px] font-semibold leading-none text-purple-800 hover:bg-purple-100 hover:underline"
                     >
-                      {moreCount} more
+                      <span className="inline sm:hidden">. . .</span>
+                      <span className="hidden sm:inline">{moreCount} more</span>
                     </button>
                   )}
                 </div>
