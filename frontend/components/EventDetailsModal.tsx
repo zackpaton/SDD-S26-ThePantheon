@@ -4,9 +4,13 @@
  * Read-only event detail sheet with coordinator tools (edit, RSVP counts) and guest RSVP / notification toggles.
  */
 import React, { useState, useEffect, useSyncExternalStore } from "react"
+import Link from "next/link"
 import { API_ORIGIN } from "@/lib/apiBase"
+import { fetchUserById } from "@/lib/usersApi"
 import { auth } from "@/lib/firebase"
 import type { CalendarEvent } from "@/components/calendar/MonthView"
+import type { UserProfile } from "@/components/EditProfileModal"
+import ProfileFieldRow from "@/components/ProfileFieldRow"
 import EventFeedbackPanel from "@/components/EventFeedbackPanel"
 
 interface EventDetailsModalProps {
@@ -19,7 +23,7 @@ interface EventDetailsModalProps {
   onDeleted?: () => void
 }
 
-/** Loads attendee display names, keeps RSVP/notification UI in sync with the event payload, and calls backend PUT routes. */
+/** Loads RSVP guest profiles for coordinators, keeps RSVP/notification UI in sync, and calls backend PUT routes. */
 export default function EventDetailsModal({
   event,
   userRole,
@@ -30,7 +34,13 @@ export default function EventDetailsModal({
 }: EventDetailsModalProps) {
   const [rsvpStatus, setRsvpStatus] = useState<boolean>(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false)
-  const [attendeeNames, setAttendeeNames] = useState<string[]>([])
+  const [attendeeRows, setAttendeeRows] = useState<
+    { uid: string; displayLabel: string; profile: UserProfile }[]
+  >([])
+  const [guestProfileModal, setGuestProfileModal] = useState<{
+    uid: string
+    profile: UserProfile
+  } | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -38,6 +48,7 @@ export default function EventDetailsModal({
   useEffect(() => {
     setShowDeleteConfirm(false)
     setDeleteError(null)
+    setGuestProfileModal(null)
   }, [event.id])
 
   // -----------------------------
@@ -59,27 +70,27 @@ export default function EventDetailsModal({
   // Fetch attendee names
   // -----------------------------
   useEffect(() => {
-    /** Resolves each attendee uid to a display name via GET /api/users/:uid. */
+    /** Loads full profile per attendee via the C++-backed user registry (`GET /api/users/:id`). */
     const fetchAttendees = async () => {
       if (!event.attendeeIds || event.attendeeIds.length === 0) {
-        setAttendeeNames([])
+        setAttendeeRows([])
         return
       }
 
       try {
         const token = await auth.currentUser?.getIdToken()
-        const names = await Promise.all(
+        if (!token) return
+        const rows = await Promise.all(
           event.attendeeIds.map(async (uid: string) => {
-            const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            })
-            const data = await res.json()
-            return `${data.firstName || ""} ${data.lastName || ""}`.trim() || "Unknown User"
-          })
+            const data = await fetchUserById(uid, token)
+            const displayLabel =
+              `${data.firstName || ""} ${data.lastName || ""}`.trim() ||
+              (typeof data.email === "string" ? data.email : "") ||
+              "Unknown user"
+            return { uid, profile: data, displayLabel }
+          }),
         )
-        setAttendeeNames(names)
+        setAttendeeRows(rows)
       } catch (err) {
         console.error("Failed to fetch attendees:", err)
       }
@@ -246,7 +257,7 @@ export default function EventDetailsModal({
 
         {event.eventType === "Recruitment" && (
           <div className="mb-4 border-t border-black/10 pt-3 text-sm">
-            <p className="mb-2 font-semibold text-neutral-900">Recruitment details</p>
+            <p className="mb-2 font-semibold text-neutral-900">Recruitment Event Details</p>
             <div>
               <span className="font-semibold">Formal recruitment: </span>
               {event.isFormalRush ? "Yes" : "No"}
@@ -256,7 +267,7 @@ export default function EventDetailsModal({
 
         {event.eventType === "Philanthropy" && (
           <div className="mb-4 border-t border-black/10 pt-3 text-sm">
-            <p className="mb-2 font-semibold text-neutral-900">Philanthropy details</p>
+            <p className="mb-2 font-semibold text-neutral-900">Philanthropy Event Details</p>
             <div className="mb-1">
               <span className="font-semibold">Beneficiary: </span>
               {event.beneficiary?.trim() ?? ""}
@@ -277,7 +288,7 @@ export default function EventDetailsModal({
 
         {event.eventType === "Social" && (
           <div className="mb-4 border-t border-black/10 pt-3 text-sm">
-            <p className="mb-2 font-semibold text-neutral-900">Social event details</p>
+            <p className="mb-2 font-semibold text-neutral-900">Social Event Details</p>
             <div className="mb-1">
               <span className="font-semibold">Formal event: </span>
               {event.isFormal ? "Yes" : "No"}
@@ -294,6 +305,20 @@ export default function EventDetailsModal({
             </div>
           </div>
         )}
+
+        {userRole === "Guest User" &&
+          userId &&
+          event.coordinatorId &&
+          event.coordinatorId !== userId && (
+            <div className="mb-4">
+              <Link
+                href={`/chat?peer=${encodeURIComponent(event.coordinatorId)}`}
+                className="block w-full rounded-lg bg-blue-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Send message to event coordinator
+              </Link>
+            </div>
+          )}
 
         {/* Coordinator view */}
         {isCoordinatorOwner && (
@@ -363,11 +388,23 @@ export default function EventDetailsModal({
               {(event.attendeeCount ?? 0) > 1 && `${event.attendeeCount} people`}
             </div>
 
-            {attendeeNames.length > 0 && (
-              <div className="text-sm mt-2 max-h-32 overflow-auto border rounded p-2">
-                {attendeeNames.map((name, index) => (
-                  <div key={index}>{name}</div>
-                ))}
+            {attendeeRows.length > 0 && (
+              <div className="mt-2 max-h-40 overflow-y-auto overscroll-contain rounded border text-sm">
+                <ul className="divide-y divide-black/10">
+                  {attendeeRows.map(a => (
+                    <li key={a.uid}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setGuestProfileModal({ uid: a.uid, profile: a.profile })
+                        }
+                        className="w-full px-2 py-2 text-left text-blue-700 underline decoration-blue-300 underline-offset-2 hover:bg-blue-50"
+                      >
+                        {a.displayLabel}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 
@@ -422,6 +459,54 @@ export default function EventDetailsModal({
           </>
         )}
       </div>
+
+      {guestProfileModal && isCoordinatorOwner && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="guest-profile-title"
+          onClick={() => setGuestProfileModal(null)}
+        >
+          <div
+            className="max-h-[min(90dvh,100svh)] w-full max-w-md overflow-y-auto overscroll-contain rounded-xl bg-white px-4 py-4 shadow-lg"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <h3 id="guest-profile-title" className="text-lg font-semibold text-neutral-900">
+                Guest Profile
+              </h3>
+              <button
+                type="button"
+                onClick={() => setGuestProfileModal(null)}
+                className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-black/5 hover:text-gray-800"
+                aria-label="Close guest profile"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex flex-col gap-2 border-b border-black/10 pb-3">
+              <ProfileFieldRow label="First name" value={guestProfileModal.profile.firstName} />
+              <ProfileFieldRow label="Last name" value={guestProfileModal.profile.lastName} />
+              <ProfileFieldRow label="Email" value={guestProfileModal.profile.email} />
+              <ProfileFieldRow label="Class year" value={guestProfileModal.profile.classYear} />
+              <ProfileFieldRow label="Major" value={guestProfileModal.profile.major} />
+              <ProfileFieldRow label="Interests" value={guestProfileModal.profile.interests} />
+              <ProfileFieldRow label="Role" value={guestProfileModal.profile.role} />
+            </div>
+            {guestProfileModal.uid !== userId && (
+              <div className="mt-4 flex justify-end">
+                <Link
+                  href={`/chat?peer=${encodeURIComponent(guestProfileModal.uid)}`}
+                  className="rounded-lg bg-blue-600 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Send message
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

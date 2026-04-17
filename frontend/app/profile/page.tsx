@@ -4,7 +4,9 @@
  * Profile route: shows the signed-in user’s backend profile, logout, and optional edit modal.
  */
 import { useEffect, useState } from "react"
+import type { User } from "firebase/auth"
 import PageShell from "@/components/PageShell"
+import ChangePasswordCard from "@/components/ChangePasswordCard"
 import { API_ORIGIN } from "@/lib/apiBase"
 import { auth } from "@/lib/firebase"
 import { onAuthStateChanged, signOut } from "firebase/auth"
@@ -12,7 +14,7 @@ import EditProfileModal from "@/components/EditProfileModal"
 
 /** Subscribes to auth, fetches `/api/users/:uid`, and renders profile fields with edit/logout actions. */
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<any>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
@@ -76,56 +78,69 @@ export default function ProfilePage() {
 
   return (
     <PageShell>
-      <div className="mx-auto flex w-full max-w-xl flex-col">
-      <h1 className="mb-4 text-2xl font-bold sm:mb-6">Profile</h1>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <h1 className="mb-3 shrink-0 text-2xl font-bold sm:mb-4">Profile</h1>
 
-      <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow sm:p-6">
-        <div>
-          <span className="font-semibold">First Name: </span>
-          <DisplayValue value={profile?.firstName} />
-        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-6 pb-2">
+            <div className="flex flex-col gap-4 rounded-lg bg-white p-4 shadow sm:p-6">
+              <div>
+                <span className="font-semibold">First Name: </span>
+                <DisplayValue value={profile?.firstName} />
+              </div>
 
-        <div>
-          <span className="font-semibold">Last Name: </span>
-          <DisplayValue value={profile?.lastName} />
-        </div>
+              <div>
+                <span className="font-semibold">Last Name: </span>
+                <DisplayValue value={profile?.lastName} />
+              </div>
 
-        <div>
-          <span className="font-semibold">Class Year: </span>
-          <DisplayValue value={profile?.classYear} />
-        </div>
+              <div>
+                <span className="font-semibold">Class Year: </span>
+                <DisplayValue value={profile?.classYear} />
+              </div>
 
-        <div>
-          <span className="font-semibold">Major: </span>
-          <DisplayValue value={profile?.major} />
-        </div>
+              <div>
+                <span className="font-semibold">Major: </span>
+                <DisplayValue value={profile?.major} />
+              </div>
 
-        <div>
-          <span className="font-semibold">Interests: </span>
-          <DisplayValue value={profile?.interests} />
-        </div>
+              <div>
+                <span className="font-semibold">Interests: </span>
+                <DisplayValue value={profile?.interests} />
+              </div>
 
-        <div>
-          <span className="font-semibold">Email: </span>
-          {user.email}
-        </div>
+              <div>
+                <span className="font-semibold">Email: </span>
+                {user.email}
+              </div>
 
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-2">
-          <button
-            type="button"
-            onClick={() => setShowEditModal(true)}
-            className="min-h-[44px] rounded bg-blue-500 px-4 py-2.5 text-white hover:bg-blue-600 sm:min-h-0"
-          >
-            Edit Profile
-          </button>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(true)}
+                  className="min-h-[44px] rounded bg-blue-500 px-4 py-2.5 text-white hover:bg-blue-600 sm:min-h-0"
+                >
+                  Edit Profile
+                </button>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="min-h-[44px] rounded bg-red-500 px-4 py-2.5 text-white hover:bg-red-600 sm:min-h-0"
-          >
-            Logout
-          </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="min-h-[44px] rounded bg-red-500 px-4 py-2.5 text-white hover:bg-red-600 sm:min-h-0"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-lg bg-white p-4 shadow sm:p-6">
+              <h2 className="text-lg font-semibold text-neutral-900">Change Password</h2>
+              <p className="text-sm text-neutral-600">
+                Enter your current password, then choose a new one. This updates your sign-in password.
+              </p>
+              <ChangePasswordCard user={user} />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -137,7 +152,6 @@ export default function ProfilePage() {
           onSave={(updatedProfile) => setProfile(updatedProfile)}
         />
       )}
-      </div>
     </PageShell>
   )
 }

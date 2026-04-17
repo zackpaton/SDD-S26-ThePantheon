@@ -5,9 +5,13 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { onAuthStateChanged, type User } from "firebase/auth"
 import { onValue, ref } from "firebase/database"
+import type { UserProfile } from "@/components/EditProfileModal"
+import ProfileFieldRow from "@/components/ProfileFieldRow"
 import { API_ORIGIN } from "@/lib/apiBase"
+import { fetchUserById } from "@/lib/usersApi"
 import { auth, database } from "@/lib/firebase"
 
 type ConversationRow = {
@@ -58,6 +62,8 @@ function initials(name: string) {
 
 /** Full-height two-pane chat UI backed by `/api/chats` and optional Realtime Database listeners. */
 export default function ChatShell() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [user, setUser] = useState<User | null>(null)
   const [authReady, setAuthReady] = useState(false)
   const [conversations, setConversations] = useState<ConversationRow[]>([])
@@ -70,6 +76,12 @@ export default function ChatShell() {
   const [lookupError, setLookupError] = useState<string | null>(null)
   const [lookupBusy, setLookupBusy] = useState(false)
   const [openBusy, setOpenBusy] = useState(false)
+  /** Until the conversation list includes the active thread (e.g. right after opening via link). */
+  const [peerUidUntilConvLoads, setPeerUidUntilConvLoads] = useState<string | null>(null)
+  const [peerProfileOpen, setPeerProfileOpen] = useState(false)
+  const [peerProfile, setPeerProfile] = useState<UserProfile | null>(null)
+  const [peerProfileLoading, setPeerProfileLoading] = useState(false)
+  const [peerProfileError, setPeerProfileError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -90,6 +102,40 @@ export default function ChatShell() {
     const rows: ConversationRow[] = data.conversations || []
     setConversations(rows)
   }, [])
+
+  /** Opens or resumes a direct chat with `peerUid` (REST); updates sidebar when RTDB is off. */
+  const openChatWithPeerUid = useCallback(
+    async (
+      peerUid: string,
+    ): Promise<{ ok: boolean; chatId?: string; error?: string }> => {
+      if (!user || peerUid === user.uid) {
+        return { ok: false, error: "You cannot open a chat with yourself." }
+      }
+      const token = await user.getIdToken()
+      const res = await fetch(`${API_ORIGIN}/api/chats/open`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ peerUid }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        return {
+          ok: false,
+          error:
+            typeof data.error === "string" ? data.error : "Could not open chat.",
+        }
+      }
+      const chatId = data.chatId as string
+      setPeerUidUntilConvLoads(peerUid)
+      setActiveChatId(chatId)
+      if (!database) void fetchConversationsRest(user)
+      return { ok: true, chatId }
+    },
+    [user, fetchConversationsRest, database],
+  )
 
   useEffect(() => {
     if (!user) {
@@ -207,31 +253,38 @@ export default function ChatShell() {
     setOpenBusy(true)
     setLookupError(null)
     try {
-      const token = await user.getIdToken()
-      const res = await fetch(`${API_ORIGIN}/api/chats/open`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ peerUid: lookupCandidate.uid }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setLookupError(typeof data.error === "string" ? data.error : "Could not open chat.")
+      const { ok, error } = await openChatWithPeerUid(lookupCandidate.uid)
+      if (!ok) {
+        setLookupError(error || "Could not open chat.")
         return
       }
-      const chatId = data.chatId as string
-      setActiveChatId(chatId)
       setLookupCandidate(null)
       setEmailQuery("")
-      if (!database) void fetchConversationsRest(user)
     } catch {
       setLookupError("Network error — try again.")
     } finally {
       setOpenBusy(false)
     }
   }
+
+  // Deep link: /chat?peer=<uid> (e.g. from event RSVP guest profile).
+  useEffect(() => {
+    const peerUid = searchParams.get("peer")
+    if (!peerUid || !user) return
+    if (peerUid === user.uid) {
+      router.replace("/chat", { scroll: false })
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      await openChatWithPeerUid(peerUid)
+      if (cancelled) return
+      router.replace("/chat", { scroll: false })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [user, searchParams, router, openChatWithPeerUid])
 
   const handleSend = async () => {
     if (!user || !activeChatId) return
@@ -259,8 +312,40 @@ export default function ChatShell() {
     }
   }
 
+  useEffect(() => {
+    if (!activeChatId) setPeerUidUntilConvLoads(null)
+  }, [activeChatId])
+
+  useEffect(() => {
+    if (!activeChatId) return
+    const c = conversations.find(x => x.chatId === activeChatId)
+    if (c?.peerUid) setPeerUidUntilConvLoads(null)
+  }, [activeChatId, conversations])
+
+  useEffect(() => {
+    setPeerProfileOpen(false)
+  }, [activeChatId])
+
   const activeConv = conversations.find(c => c.chatId === activeChatId)
+  const threadPeerUid = activeConv?.peerUid ?? peerUidUntilConvLoads
   const activeTitle = activeConv?.peerName || activeConv?.peerEmail || "Conversation"
+
+  const openPeerProfile = async () => {
+    if (!user || !threadPeerUid) return
+    setPeerProfileOpen(true)
+    setPeerProfile(null)
+    setPeerProfileError(null)
+    setPeerProfileLoading(true)
+    try {
+      const token = await user.getIdToken()
+      const data = await fetchUserById(threadPeerUid, token)
+      setPeerProfile(data)
+    } catch {
+      setPeerProfileError("Could not load profile.")
+    } finally {
+      setPeerProfileLoading(false)
+    }
+  }
 
   if (!authReady) {
     return (
@@ -273,12 +358,12 @@ export default function ChatShell() {
   if (!user) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-        <p className="text-neutral-700">Sign in to use Messages.</p>
+        <p className="text-neutral-700">Please log in to send and receive chats.</p>
         <Link
           href="/login"
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
-          Log in
+          Login
         </Link>
       </div>
     )
@@ -384,24 +469,34 @@ export default function ChatShell() {
           </div>
         ) : (
           <>
-            <header className="flex shrink-0 items-center border-b border-black/10 px-3 py-3 sm:px-4">
+            <header className="flex shrink-0 flex-col border-b border-black/10 px-3 pb-3 pt-3 sm:px-4">
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  aria-label="Back to conversations"
+                  className="mr-2 flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg text-lg text-neutral-700 hover:bg-black/5 md:hidden"
+                  onClick={() => setActiveChatId(null)}
+                >
+                  ←
+                </button>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+                  {initials(activeTitle)}
+                </div>
+                <div className="ml-3 min-w-0">
+                  <h2 className="truncate text-base font-semibold text-neutral-900">{activeTitle}</h2>
+                  {activeConv?.peerEmail && (
+                    <p className="truncate text-xs text-neutral-500">{activeConv.peerEmail}</p>
+                  )}
+                </div>
+              </div>
               <button
                 type="button"
-                aria-label="Back to conversations"
-                className="mr-2 flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg text-lg text-neutral-700 hover:bg-black/5 md:hidden"
-                onClick={() => setActiveChatId(null)}
+                onClick={() => void openPeerProfile()}
+                disabled={!threadPeerUid}
+                className="mt-2 w-full rounded-lg border border-black/15 bg-purple-400 px-3 py-2 text-sm font-medium text-neutral-900 hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                ←
+                View profile
               </button>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
-                {initials(activeTitle)}
-              </div>
-              <div className="ml-3 min-w-0">
-                <h2 className="truncate text-base font-semibold text-neutral-900">{activeTitle}</h2>
-                {activeConv?.peerEmail && (
-                  <p className="truncate text-xs text-neutral-500">{activeConv.peerEmail}</p>
-                )}
-              </div>
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto bg-[#e8e8ed] px-3 py-3">
@@ -473,6 +568,62 @@ export default function ChatShell() {
           </>
         )}
       </section>
+
+      {peerProfileOpen && user && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="peer-profile-title"
+          onClick={() => setPeerProfileOpen(false)}
+        >
+          <div
+            className="max-h-[min(90dvh,100svh)] w-full max-w-md overflow-y-auto overscroll-contain rounded-xl bg-white px-4 py-4 shadow-lg"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <h3 id="peer-profile-title" className="text-lg font-semibold text-neutral-900">
+                {peerProfileLoading
+                  ? "Profile"
+                  : `${peerProfile?.firstName || ""} ${peerProfile?.lastName || ""}`.trim() ||
+                    activeTitle ||
+                    "Profile"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPeerProfileOpen(false)}
+                className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-black/5 hover:text-gray-800"
+                aria-label="Close profile"
+              >
+                ✕
+              </button>
+            </div>
+            {peerProfileLoading && (
+              <p className="text-sm text-neutral-600">Loading profile…</p>
+            )}
+            {peerProfileError && (
+              <p className="text-sm text-red-600">{peerProfileError}</p>
+            )}
+            {!peerProfileLoading && !peerProfileError && peerProfile && (
+              <div className="flex flex-col gap-2">
+                <ProfileFieldRow label="First name" value={peerProfile.firstName} />
+                <ProfileFieldRow label="Last name" value={peerProfile.lastName} />
+                <ProfileFieldRow label="Email" value={peerProfile.email} />
+                <ProfileFieldRow label="Class year" value={peerProfile.classYear} />
+                <ProfileFieldRow label="Major" value={peerProfile.major} />
+                <ProfileFieldRow label="Interests" value={peerProfile.interests} />
+                <ProfileFieldRow label="Role" value={peerProfile.role} />
+                {peerProfile.role === "Event Coordinator" && (
+                  <ProfileFieldRow label="Fraternity" value={peerProfile.fraternity} />
+                )}
+              </div>
+            )}
+            {!peerProfileLoading && !peerProfileError && !peerProfile && (
+              <p className="text-sm text-neutral-600">No profile details available.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

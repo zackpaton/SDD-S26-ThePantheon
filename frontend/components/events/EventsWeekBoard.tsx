@@ -128,7 +128,7 @@ export default function EventsWeekBoard() {
                         <span className="text-sm font-medium text-neutral-800">{formatEventWhen(ev)}</span>
                         {loc ? (
                           <span className="text-sm text-neutral-600">
-                            <span className="font-medium text-neutral-700">Location: </span>
+                            <span className="text-sm text-neutral-600">Location: </span>
                             {loc}
                           </span>
                         ) : null}

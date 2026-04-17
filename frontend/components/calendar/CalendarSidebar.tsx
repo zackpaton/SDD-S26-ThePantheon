@@ -106,7 +106,7 @@ export default function CalendarSidebar({ board }: { board: CalendarBoardState }
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="mt-auto min-h-[44px] rounded border border-black bg-purple-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-purple-700 sm:min-h-0 sm:py-2"
+          className="mt-auto min-h-[44px] rounded border border-black bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-purple-700 sm:min-h-0 sm:py-2"
         >
           Add Event
         </button>
