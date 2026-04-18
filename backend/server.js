@@ -22,7 +22,6 @@ const { authenticate } = require('./lib/authenticate');
 const createUsersRouter = require('./routes/users');
 const createEventsRouter = require('./routes/events');
 const createNotificationsRouter = require('./routes/notifications');
-const createStatisticsRouter = require('./routes/statistics');
 const createChatsRouter = require('./routes/chats');
 
 const app = express();
