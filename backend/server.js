@@ -74,7 +74,7 @@ nextApp.prepare().then(() => {
       await loadEventsToCppService();
       await loadEventFeedbackToCppService();
     } catch (err) {
-      console.error('❌ Failed initial load:', err);
+      console.error('Failed initial load:', err);
     }
   });
 });
