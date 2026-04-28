@@ -115,7 +115,10 @@ export default function SignUpForm() {
     <div className="flex min-h-[100dvh] items-center justify-center px-4 py-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <form
         className="mb-4 w-full max-w-sm rounded-lg bg-white p-6 shadow-md sm:px-8 sm:pt-6 sm:pb-8"
-        onSubmit={(e) => e.preventDefault()}
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleSignup()
+        }}
       >
         {formError ? (
           <p className="mb-4 text-sm text-red-600" role="alert">
@@ -232,9 +235,8 @@ export default function SignUpForm() {
 
         <div>
           <button
-            type="button"
+            type="submit"
             disabled={busy}
-            onClick={() => void handleSignup()}
             className="min-h-[44px] w-full rounded bg-purple-500 py-2.5 font-bold text-white hover:bg-purple-700 disabled:opacity-60 sm:min-h-0 sm:py-2"
           >
             {busy ? "Creating account…" : "Sign Up"}
