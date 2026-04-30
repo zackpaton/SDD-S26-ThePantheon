@@ -1,15 +1,15 @@
 /**
  * @file Event.cpp
- * Base Event implementation: attendee/notification lists, JSON I/O, validation, and cloning.
+ * Base Event implementation: attendee/notification lists, JSON I/O,
+ * validation, and cloning.
  */
 #include "Event.h"
 #include <algorithm>
+#include <cstdint>
 
 using json = nlohmann::json;
 
-Event::Event() 
-    : id(""), title(""), description(""), date(0), startTime(0), endTime(0),
-      location(""), coordinatorId(""), fraternity("") {}
+Event::Event() : date(0), startTime(0), endTime(0) {}
 
 Event::Event(const std::string& id, const std::string& title, const std::string& description,
              std::time_t date, const std::string& location, const std::string& coordinatorId,
@@ -35,20 +35,25 @@ void Event::removeAttendee(const std::string& userId) {
 /** Adds or removes userId from notificationAttendeeIds depending on enabled. */
 void Event::toggleNotification(const std::string& userId, bool enabled) {
     if (enabled) {
-        if (std::find(notificationAttendeeIds.begin(), notificationAttendeeIds.end(), userId) == notificationAttendeeIds.end()) {
+        auto nit = notificationAttendeeIds.begin();
+        auto nend = notificationAttendeeIds.end();
+        if (std::find(nit, nend, userId) == nend) {
             notificationAttendeeIds.push_back(userId);
         }
     } else {
         notificationAttendeeIds.erase(
-            std::remove(notificationAttendeeIds.begin(), notificationAttendeeIds.end(), userId),
-            notificationAttendeeIds.end()
-        );
+            std::remove(notificationAttendeeIds.begin(),
+                        notificationAttendeeIds.end(),
+                        userId),
+            notificationAttendeeIds.end());
     }
 }
 
 /** Appends userId to notifiedAttendeeIds after a reminder is successfully sent. */
 void Event::notificationSent(const std::string& userId) {
-    if (std::find(notifiedAttendeeIds.begin(), notifiedAttendeeIds.end(), userId) == notifiedAttendeeIds.end()) {
+    auto nit = notifiedAttendeeIds.begin();
+    auto nend = notifiedAttendeeIds.end();
+    if (std::find(nit, nend, userId) == nend) {
         notifiedAttendeeIds.push_back(userId);
     }
 }
@@ -64,9 +69,9 @@ json Event::toJson() const {
     j["id"] = id;
     j["title"] = title;
     j["description"] = description;
-    j["date"] = static_cast<long long>(date);
-    j["startTime"] = static_cast<long long>(startTime);
-    j["endTime"] = static_cast<long long>(endTime);
+    j["date"] = static_cast<int64_t>(date);
+    j["startTime"] = static_cast<int64_t>(startTime);
+    j["endTime"] = static_cast<int64_t>(endTime);
     j["location"] = location;
     j["coordinatorId"] = coordinatorId;
     j["fraternity"] = fraternity;

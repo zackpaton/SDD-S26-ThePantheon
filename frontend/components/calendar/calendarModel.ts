@@ -1,5 +1,6 @@
 /**
- * Event shape from the API plus UI fields (e.g. color) used in month and week calendar views.
+ * Event shape from the API plus UI fields (e.g. color) used in month and week
+ * calendar views.
  */
 export type CalendarEvent = {
   id: string

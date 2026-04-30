@@ -5,7 +5,7 @@
 #include <ctime>
 #include <memory>
 #include <vector>
-#include <nlohmann/json.hpp>
+#include "nlohmann_json_include.hpp"
 
 /**
  * @file Event.h

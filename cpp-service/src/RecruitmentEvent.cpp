@@ -7,8 +7,7 @@
 
 using json = nlohmann::json;
 
-RecruitmentEvent::RecruitmentEvent() 
-    : Event(), isFormalRush(false) {}
+RecruitmentEvent::RecruitmentEvent() : isFormalRush(false) {}
 
 RecruitmentEvent::RecruitmentEvent(const std::string& id, const std::string& title,
                                    const std::string& description, std::time_t date,

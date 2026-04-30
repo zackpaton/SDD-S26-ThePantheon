@@ -6,8 +6,7 @@
 
 using json = nlohmann::json;
 
-PhilanthropyEvent::PhilanthropyEvent()
-    : Event(), beneficiary(""), fundraisingGoal(0.0) {}
+PhilanthropyEvent::PhilanthropyEvent() : fundraisingGoal(0.0) {}
 
 PhilanthropyEvent::PhilanthropyEvent(const std::string& id, const std::string& title,
                                      const std::string& description, std::time_t date,

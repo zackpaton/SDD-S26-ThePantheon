@@ -6,9 +6,7 @@
 
 using json = nlohmann::json;
 
-SocialEvent::SocialEvent()
-    : Event(), isFormal(false),
-      hasAlcohol(false) {}
+SocialEvent::SocialEvent() : isFormal(false), hasAlcohol(false) {}
 
 SocialEvent::SocialEvent(const std::string& id, const std::string& title,
                          const std::string& description, std::time_t date,

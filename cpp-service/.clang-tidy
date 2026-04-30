@@ -1,0 +1,29 @@
+# Clang-tidy checks aligned with Google C++ style modules plus general bugprone/readability.
+# Include nlohmann/json only via include/nlohmann_json_include.hpp (system_header pragmas).
+# Layout stays in .clang-format (BasedOnStyle: Google). Run from cpp-service/build after CMake.
+#
+# Ref: https://clang.llvm.org/extra/clang-tidy/checks/list.html
+
+Checks: >
+  -*,
+  google-*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-function-cognitive-complexity,
+  -bugprone-easily-swappable-parameters,
+  -google-readability-namespace-comments,
+  -google-readability-todo
+
+WarningsAsErrors: ''
+
+# Only surface issues under cpp-service/include|src (skips nlohmann/json, etc.).
+HeaderFilterRegex: '.*[/\\\\]cpp-service[/\\\\](include|src)[/\\\\].*'
+
+FormatStyle: file
+
+ExtraArgs:
+  - -std=c++17

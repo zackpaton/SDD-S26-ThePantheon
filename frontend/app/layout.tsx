@@ -1,34 +1,38 @@
 /**
- * Root layout: global fonts, styles, and the top navigation shell wrapping every page.
+ * Root layout: global fonts, styles, and the top navigation shell wrapping
+ * every page.
  */
-import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import Navbar from "@/components/Navbar";
+import type {Metadata, Viewport} from 'next';
+import {
+  Geist as geistSansFont,
+  Geist_Mono as geistMonoFont,
+} from 'next/font/google';
+import './globals.css';
+import Navbar from '@/components/Navbar';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const geistSans = geistSansFont({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const geistMono = geistMonoFont({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Greeked Out",
-  description: "Fraternity Event Management Systen, created by The Pantheon",
+  title: 'Greeked Out',
+  description: 'Fraternity Event Management Systen, created by The Pantheon',
   icons: {
-    icon: [{ url: "/favicon.webp", type: "image/webp" }],
+    icon: [{url: '/favicon.webp', type: 'image/webp'}],
   },
 };
 
 export const viewport: Viewport = {
-  width: "device-width",
+  width: 'device-width',
   initialScale: 1,
-  viewportFit: "cover",
-  themeColor: "#a855f7",
+  viewportFit: 'cover',
+  themeColor: '#a855f7',
 };
 
 /** Wraps all routes with HTML shell, Geist fonts, and Navbar. */
@@ -44,7 +48,12 @@ export default function RootLayout({
       >
         <div className="flex h-svh min-h-0 flex-col bg-purple-500">
           <Navbar />
-          <main className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain">
+          <main
+            className={
+              'flex min-h-0 flex-1 flex-col overflow-x-hidden ' +
+              'overflow-y-auto overscroll-y-contain'
+            }
+          >
             {children}
           </main>
         </div>

@@ -3,7 +3,7 @@
 
 #include <memory>
 #include <string>
-#include <nlohmann/json.hpp>
+#include "nlohmann_json_include.hpp"
 
 /**
  * @file User.h

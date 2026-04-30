@@ -4,7 +4,7 @@
 #include "EventManager.h"
 #include "UserManager.h"
 #include <map>
-#include <nlohmann/json.hpp>
+#include "nlohmann_json_include.hpp"
 #include <string>
 
 /**
@@ -22,7 +22,8 @@ private:
 
     std::map<std::string, std::map<std::string, Row>> byEvent;
 
-    std::string displayNameForUser(const UserManager& users, const std::string& userId) const;
+    static std::string displayNameForUser(const UserManager& users,
+                                          const std::string& userId);
 
 public:
     EventFeedbackManager();

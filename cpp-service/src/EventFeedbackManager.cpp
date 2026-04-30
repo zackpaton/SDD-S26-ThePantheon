@@ -16,13 +16,19 @@ namespace {
 
 constexpr int kMaxCommentLen = 2000;
 
-static std::string trimCopy(std::string s) {
-    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(0, 1);
-    while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
+std::string trimCopy(std::string s) {
+    while (!s.empty() &&
+           std::isspace(static_cast<unsigned char>(s.front())) != 0) {
+        s.erase(0, 1);
+    }
+    while (!s.empty() &&
+           std::isspace(static_cast<unsigned char>(s.back())) != 0) {
+        s.pop_back();
+    }
     return s;
 }
 
-static int64_t nowMs() {
+int64_t nowMs() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(
                std::chrono::system_clock::now().time_since_epoch())
         .count();
@@ -44,7 +50,8 @@ void EventFeedbackManager::removeEventFeedback(const std::string& eventId) {
     byEvent.erase(eventId);
 }
 
-std::string EventFeedbackManager::displayNameForUser(const UserManager& users, const std::string& userId) const {
+std::string EventFeedbackManager::displayNameForUser(const UserManager& users,
+                                                     const std::string& userId) {
     auto u = users.getUser(userId);
     if (!u) {
         return "Guest";
@@ -55,8 +62,12 @@ std::string EventFeedbackManager::displayNameForUser(const UserManager& users, c
         std::string em = trimCopy(u->getEmail());
         return em.empty() ? "Guest" : em;
     }
-    if (fn.empty()) return ln;
-    if (ln.empty()) return fn;
+    if (fn.empty()) {
+        return ln;
+    }
+    if (ln.empty()) {
+        return fn;
+    }
     return fn + " " + ln;
 }
 
@@ -105,8 +116,7 @@ json EventFeedbackManager::upsert(EventManager& events, const std::string& event
         err["error"] = "vote must be up or down";
         return err;
     }
-    std::string c = comment;
-    if (static_cast<int>(c.size()) > kMaxCommentLen) {
+    if (static_cast<int>(comment.size()) > kMaxCommentLen) {
         json err;
         err["error"] = "Comment too long";
         return err;
@@ -128,7 +138,7 @@ json EventFeedbackManager::upsert(EventManager& events, const std::string& event
     Row r;
     r.userId = userId;
     r.vote = vote;
-    r.comment = c;
+    r.comment = comment;
     r.updatedAtMs = nowMs();
     byEvent[eventId][userId] = r;
 
@@ -192,10 +202,11 @@ json EventFeedbackManager::getCoordinatorView(const EventManager& events, const 
 
     auto evIt = byEvent.find(eventId);
     if (evIt != byEvent.end()) {
+        items.reserve(evIt->second.size());
         for (const auto& pair : evIt->second) {
             const std::string& uid = pair.first;
             const Row& r = pair.second;
-            if (!attendeeSet.count(uid)) {
+            if (attendeeSet.count(uid) == 0) {
                 continue;
             }
             if (r.vote == "up") {
@@ -215,7 +226,8 @@ json EventFeedbackManager::getCoordinatorView(const EventManager& events, const 
         }
     }
 
-    std::sort(items.begin(), items.end(), [](const Item& a, const Item& b) { return a.t > b.t; });
+    std::sort(items.begin(), items.end(),
+              [](const Item& a, const Item& b) { return a.t > b.t; });
 
     json arr = json::array();
     for (const auto& it : items) {

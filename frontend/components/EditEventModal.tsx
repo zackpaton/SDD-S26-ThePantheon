@@ -1,13 +1,14 @@
-"use client"
+'use client';
 
 /**
- * Modal for editing an existing event: pre-fills from Unix timestamps, PUTs updates, and runs onSave on success.
+ * Modal for editing an existing event: pre-fills from Unix timestamps, PUTs
+ * updates, and runs onSave on success.
  */
-import { useState, type ChangeEvent } from "react"
-import { API_ORIGIN } from "@/lib/apiBase"
-import { getApiErrorMessage } from "@/lib/apiErrorMessage"
-import { validateEventFormFields } from "@/lib/validateEventForm"
-import { auth } from "@/lib/firebase"
+import {useState, type ChangeEvent} from 'react';
+import {API_ORIGIN} from '@/lib/apiBase';
+import {getApiErrorMessage} from '@/lib/apiErrorMessage';
+import {validateEventFormFields} from '@/lib/validateEventForm';
+import {auth} from '@/lib/firebase';
 
 type EditableEvent = {
   id: string
@@ -66,80 +67,97 @@ type EditEventFormState = {
   maxCapacity: string
 }
 
-/** Maps a stored event (Unix seconds) into date/time strings for HTML date and time inputs. */
+/**
+ * Maps a stored event (Unix seconds) into date/time strings for HTML date and
+ * time inputs.
+ */
 function createFormStateFromEvent(ev: EditableEvent): EditEventFormState {
-  const dateObj = new Date(ev.date * 1000)
-  const startObj = new Date(ev.startTime * 1000)
-  const endObj = new Date(ev.endTime * 1000)
-  const pad = (n: number) => n.toString().padStart(2, "0")
+  const dateObj = new Date(ev.date * 1000);
+  const startObj = new Date(ev.startTime * 1000);
+  const endObj = new Date(ev.endTime * 1000);
+  const pad = (n: number) => n.toString().padStart(2, '0');
 
   return {
-    title: ev.title || "",
-    description: ev.description || "",
-    location: ev.location || "",
-    eventType: ev.eventType || "",
-    date: dateObj.toISOString().split("T")[0],
+    title: ev.title || '',
+    description: ev.description || '',
+    location: ev.location || '',
+    eventType: ev.eventType || '',
+    date: dateObj.toISOString().split('T')[0],
     startTime: `${pad(startObj.getHours())}:${pad(startObj.getMinutes())}`,
     endTime: `${pad(endObj.getHours())}:${pad(endObj.getMinutes())}`,
     isFormalRush: ev.isFormalRush || false,
-    beneficiary: ev.beneficiary || "",
-    fundraisingGoal: ev.fundraisingGoal?.toString() || "",
+    beneficiary: ev.beneficiary || '',
+    fundraisingGoal: ev.fundraisingGoal?.toString() || '',
     isFormal: ev.isFormal || false,
     hasAlcohol: ev.hasAlcohol || false,
-    maxCapacity: ev.maxCapacity?.toString() || "",
-  }
+    maxCapacity: ev.maxCapacity?.toString() || '',
+  };
 }
 
-/** Form state is initialized from props via createFormStateFromEvent; PUT merges coordinator fields from the API user record. */
-export default function EditEventModal({ event, onClose, onSave }: EditEventModalProps) {
-  const [submitError, setSubmitError] = useState("")
-  const [form, setForm] = useState<EditEventFormState>(() => createFormStateFromEvent(event))
+/**
+ * Form state is initialized from props via createFormStateFromEvent; PUT merges
+ * coordinator fields from the API user record.
+ */
+export default function EditEventModal({
+  event,
+  onClose,
+  onSave,
+}: EditEventModalProps) {
+  const [submitError, setSubmitError] = useState('');
+  const [form, setForm] = useState<EditEventFormState>(() =>
+    createFormStateFromEvent(event),
+  );
 
   /** Updates one field in the local edit form (text or checkbox). */
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setSubmitError("")
-    const target = e.target
-    const name = target.name
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    setSubmitError('');
+    const target = e.target;
+    const name = target.name;
     const nextValue =
-      target instanceof HTMLInputElement && target.type === "checkbox"
-        ? target.checked
-        : (target as HTMLInputElement | HTMLSelectElement).value
+      target instanceof HTMLInputElement && target.type === 'checkbox' ?
+        target.checked :
+        (target as HTMLInputElement | HTMLSelectElement).value;
     setForm({
       ...form,
       [name]: nextValue,
-    })
-  }
+    });
+  };
 
-  /** Sends PUT /api/events/:id with the merged body and coordinator metadata, then onSave + onClose. */
+  /**
+   * Sends PUT /api/events/:id with the merged body and coordinator metadata,
+   * then onSave + onClose.
+   */
   const handleSubmit = async () => {
     try {
-      setSubmitError("")
-      const clientErr = validateEventFormFields(form)
+      setSubmitError('');
+      const clientErr = validateEventFormFields(form);
       if (clientErr) {
-        setSubmitError(clientErr)
-        return
+        setSubmitError(clientErr);
+        return;
       }
 
-      const convDate = `${form.date}T00:00:00-04:00`
-      const startISO = `${form.date}T${form.startTime}:00-04:00`
-      const endISO = `${form.date}T${form.endTime}:00-04:00`
+      const convDate = `${form.date}T00:00:00-04:00`;
+      const startISO = `${form.date}T${form.startTime}:00-04:00`;
+      const endISO = `${form.date}T${form.endTime}:00-04:00`;
 
-      const token = await auth.currentUser?.getIdToken()
-      const uid = auth.currentUser?.uid
+      const token = await auth.currentUser?.getIdToken();
+      const uid = auth.currentUser?.uid;
       if (!token || !uid) {
-        setSubmitError("You must be signed in to save changes.")
-        return
+        setSubmitError('You must be signed in to save changes.');
+        return;
       }
 
       const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      })
+      });
       const coordinator = (await res.json()) as {
         id?: string
         fraternity?: string
-      }
+      };
 
       const payload: UpdateEventPayload = {
         title: form.title,
@@ -151,50 +169,54 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
         endTime: endISO,
         coordinatorId: coordinator.id,
         fraternity: coordinator.fraternity,
+      };
+
+      if (form.eventType === 'Recruitment') {
+        payload.isFormalRush = form.isFormalRush;
       }
 
-      if (form.eventType === "Recruitment") {
-        payload.isFormalRush = form.isFormalRush
+      if (form.eventType === 'Philanthropy') {
+        payload.beneficiary = form.beneficiary;
+        payload.fundraisingGoal = Number(form.fundraisingGoal);
       }
 
-      if (form.eventType === "Philanthropy") {
-        payload.beneficiary = form.beneficiary
-        payload.fundraisingGoal = Number(form.fundraisingGoal)
-      }
-
-      if (form.eventType === "Social") {
-        payload.isFormal = form.isFormal
-        payload.hasAlcohol = form.hasAlcohol
-        payload.maxCapacity = Number(form.maxCapacity)
+      if (form.eventType === 'Social') {
+        payload.isFormal = form.isFormal;
+        payload.hasAlcohol = form.hasAlcohol;
+        payload.maxCapacity = Number(form.maxCapacity);
       }
 
       const putRes = await fetch(`${API_ORIGIN}/api/events/${event.id}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
-      })
+      });
 
-      const putBody: unknown = await putRes.json().catch(() => ({}))
+      const putBody: unknown = await putRes.json().catch(() => ({}));
       if (!putRes.ok) {
-        setSubmitError(
-          getApiErrorMessage(putBody, `Could not save event (${putRes.status}).`),
-        )
-        return
+        const saveErr = `Could not save event (${putRes.status}).`;
+        setSubmitError(getApiErrorMessage(putBody, saveErr));
+        return;
       }
 
-      onSave()
-      onClose()
+      onSave();
+      onClose();
     } catch (err) {
-      console.error(err)
-      setSubmitError("Something went wrong. Please try again.")
+      console.error(err);
+      setSubmitError('Something went wrong. Please try again.');
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
+    <div
+      className={
+        'fixed inset-0 z-50 flex items-center justify-center ' +
+        'bg-black/40 backdrop-blur-sm'
+      }
+    >
       <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
         <h2 className="text-lg font-semibold mb-4">Edit Event</h2>
 
@@ -265,7 +287,7 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
             className="border p-2 rounded"
           />
 
-          {form.eventType === "Recruitment" && (
+          {form.eventType === 'Recruitment' && (
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -277,7 +299,7 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
             </label>
           )}
 
-          {form.eventType === "Philanthropy" && (
+          {form.eventType === 'Philanthropy' && (
             <>
               <input
                 name="beneficiary"
@@ -296,7 +318,7 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
             </>
           )}
 
-          {form.eventType === "Social" && (
+          {form.eventType === 'Social' && (
             <>
               <label className="flex items-center gap-2">
                 <input
@@ -342,5 +364,5 @@ export default function EditEventModal({ event, onClose, onSave }: EditEventModa
         </div>
       </div>
     </div>
-  )
+  );
 }

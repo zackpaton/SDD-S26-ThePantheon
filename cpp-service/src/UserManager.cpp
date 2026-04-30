@@ -24,7 +24,7 @@ std::shared_ptr<User> UserManager::createUserFromJson(const json& j) {
     return g;
 }
 
-bool UserManager::upsertUser(std::shared_ptr<User> user) {
+bool UserManager::upsertUser(const std::shared_ptr<User>& user) {
     if (!user || !user->isValid()) {
         return false;
     }
@@ -33,7 +33,7 @@ bool UserManager::upsertUser(std::shared_ptr<User> user) {
 }
 
 bool UserManager::upsertFromJson(const json& j) {
-    auto user = createUserFromJson(j);
+    auto user = UserManager::createUserFromJson(j);
     return upsertUser(user);
 }
 
@@ -86,7 +86,7 @@ void UserManager::fromJson(const json& j) {
         return;
     }
     for (const auto& item : j) {
-        auto u = createUserFromJson(item);
+        auto u = UserManager::createUserFromJson(item);
         if (u && u->isValid()) {
             users[u->getId()] = u;
         }

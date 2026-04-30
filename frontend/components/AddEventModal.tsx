@@ -1,13 +1,14 @@
-"use client"
+'use client';
 
 /**
- * Modal form for coordinators to create a new calendar event (typed fields per event category) and POST to the API.
+ * Modal form for coordinators to create a new calendar event (typed fields
+ * per event category) and POST to the API.
  */
-import { useState, type ChangeEvent } from "react"
-import { API_ORIGIN } from "@/lib/apiBase"
-import { getApiErrorMessage } from "@/lib/apiErrorMessage"
-import { validateEventFormFields } from "@/lib/validateEventForm"
-import { auth } from "@/lib/firebase"
+import {useState, type ChangeEvent} from 'react';
+import {API_ORIGIN} from '@/lib/apiBase';
+import {getApiErrorMessage} from '@/lib/apiErrorMessage';
+import {validateEventFormFields} from '@/lib/validateEventForm';
+import {auth} from '@/lib/firebase';
 
 type CreateEventPayload = {
   title: string
@@ -32,73 +33,81 @@ type AddEventModalProps = {
   onCreate: () => void
 }
 
-/** Controlled form that loads coordinator info, builds the payload, and calls onCreate after a successful POST. */
-export default function AddEventModal({ onClose, onCreate }: AddEventModalProps) {
-  const [submitError, setSubmitError] = useState("")
+/**
+ * Controlled form that loads coordinator info, builds the payload, and calls
+ * onCreate after a successful POST.
+ */
+export default function AddEventModal({onClose, onCreate}: AddEventModalProps) {
+  const [submitError, setSubmitError] = useState('');
   const [form, setForm] = useState({
-    title: "",
-    description: "",
-    location: "",
-    eventType: "",
-    date: "",
-    startTime: "",
-    endTime: "",
+    title: '',
+    description: '',
+    location: '',
+    eventType: '',
+    date: '',
+    startTime: '',
+    endTime: '',
 
     isFormalRush: false,
 
-    beneficiary: "",
-    fundraisingGoal: "",
+    beneficiary: '',
+    fundraisingGoal: '',
 
     isFormal: false,
     hasAlcohol: false,
-    maxCapacity: "",
-  })
+    maxCapacity: '',
+  });
 
   /** Updates a single form field from controlled inputs or checkboxes. */
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setSubmitError("")
-    const target = e.target
-    const name = target.name
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    setSubmitError('');
+    const target = e.target;
+    const name = target.name;
     const nextValue =
-      target instanceof HTMLInputElement && target.type === "checkbox"
-        ? target.checked
-        : (target as HTMLInputElement | HTMLSelectElement).value
+      target instanceof HTMLInputElement && target.type === 'checkbox' ?
+        target.checked :
+        (target as HTMLInputElement | HTMLSelectElement).value;
     setForm({
       ...form,
       [name]: nextValue,
-    })
-  }
+    });
+  };
 
-  /** Validates implicit required fields, POSTs JSON to /api/events with auth, then closes and refreshes. */
+  /**
+   * Validates implicit required fields, POSTs JSON to /api/events with auth,
+   * then closes and refreshes.
+   */
   const handleSubmit = async () => {
     try {
-      setSubmitError("")
-      const clientErr = validateEventFormFields(form)
+      setSubmitError('');
+      const clientErr = validateEventFormFields(form);
       if (clientErr) {
-        setSubmitError(clientErr)
-        return
+        setSubmitError(clientErr);
+        return;
       }
 
-      const convDate = `${form.date}T00:00:00-04:00`
-      const startISO = `${form.date}T${form.startTime}:00-04:00`
-      const endISO = `${form.date}T${form.endTime}:00-04:00`
+      const convDate = `${form.date}T00:00:00-04:00`;
+      const startISO = `${form.date}T${form.startTime}:00-04:00`;
+      const endISO = `${form.date}T${form.endTime}:00-04:00`;
 
-      const token = await auth.currentUser?.getIdToken()
-      const uid = auth.currentUser?.uid
+      const token = await auth.currentUser?.getIdToken();
+      const uid = auth.currentUser?.uid;
       if (!token || !uid) {
-        setSubmitError("You must be signed in to create an event.")
-        return
+        setSubmitError('You must be signed in to create an event.');
+        return;
       }
 
       const res = await fetch(`${API_ORIGIN}/api/users/${uid}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      })
+      });
       const coordinator = (await res.json()) as {
         id?: string
         fraternity?: string
-      }
+      };
 
       const payload: CreateEventPayload = {
         title: form.title,
@@ -111,50 +120,54 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
 
         coordinatorId: coordinator.id,
         fraternity: coordinator.fraternity,
+      };
+
+      if (form.eventType === 'Recruitment') {
+        payload.isFormalRush = form.isFormalRush;
       }
 
-      if (form.eventType === "Recruitment") {
-        payload.isFormalRush = form.isFormalRush
+      if (form.eventType === 'Philanthropy') {
+        payload.beneficiary = form.beneficiary;
+        payload.fundraisingGoal = Number(form.fundraisingGoal);
       }
 
-      if (form.eventType === "Philanthropy") {
-        payload.beneficiary = form.beneficiary
-        payload.fundraisingGoal = Number(form.fundraisingGoal)
-      }
-
-      if (form.eventType === "Social") {
-        payload.isFormal = form.isFormal
-        payload.hasAlcohol = form.hasAlcohol
-        payload.maxCapacity = Number(form.maxCapacity)
+      if (form.eventType === 'Social') {
+        payload.isFormal = form.isFormal;
+        payload.hasAlcohol = form.hasAlcohol;
+        payload.maxCapacity = Number(form.maxCapacity);
       }
 
       const createRes = await fetch(`${API_ORIGIN}/api/events`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
-      })
+      });
 
-      const body: unknown = await createRes.json().catch(() => ({}))
+      const body: unknown = await createRes.json().catch(() => ({}));
       if (!createRes.ok) {
-        setSubmitError(
-          getApiErrorMessage(body, `Could not create event (${createRes.status}).`),
-        )
-        return
+        const createErr = `Could not create event (${createRes.status}).`;
+        setSubmitError(getApiErrorMessage(body, createErr));
+        return;
       }
 
-      onCreate()
-      onClose()
+      onCreate();
+      onClose();
     } catch (err) {
-      console.error(err)
-      setSubmitError("Something went wrong. Please try again.")
+      console.error(err);
+      setSubmitError('Something went wrong. Please try again.');
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
+    <div
+      className={
+        'fixed inset-0 z-50 flex items-center justify-center ' +
+        'bg-black/40 backdrop-blur-sm'
+      }
+    >
       <div className="bg-white rounded-lg p-6 w-96 shadow-lg">
         <h2 className="text-lg font-semibold mb-4">Add Event</h2>
 
@@ -219,7 +232,7 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
             className="border p-2 rounded"
           />
 
-          {form.eventType === "Recruitment" && (
+          {form.eventType === 'Recruitment' && (
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -231,7 +244,7 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
             </label>
           )}
 
-          {form.eventType === "Philanthropy" && (
+          {form.eventType === 'Philanthropy' && (
             <>
               <input
                 name="beneficiary"
@@ -248,7 +261,7 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
             </>
           )}
 
-          {form.eventType === "Social" && (
+          {form.eventType === 'Social' && (
             <>
               <label className="flex items-center gap-2">
                 <input
@@ -293,5 +306,5 @@ export default function AddEventModal({ onClose, onCreate }: AddEventModalProps)
         </div>
       </div>
     </div>
-  )
+  );
 }

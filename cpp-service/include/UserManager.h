@@ -8,7 +8,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <nlohmann/json.hpp>
+#include "nlohmann_json_include.hpp"
 
 /**
  * @file UserManager.h
@@ -18,13 +18,13 @@ class UserManager {
 private:
     std::map<std::string, std::shared_ptr<User>> users;
 
-    std::shared_ptr<User> createUserFromJson(const nlohmann::json& j);
+    static std::shared_ptr<User> createUserFromJson(const nlohmann::json& j);
 
 public:
     UserManager();
     ~UserManager();
 
-    bool upsertUser(std::shared_ptr<User> user);
+    bool upsertUser(const std::shared_ptr<User>& user);
     /** Parses JSON and replaces or inserts the user (correct subclass by role). */
     bool upsertFromJson(const nlohmann::json& j);
 

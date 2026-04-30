@@ -8,7 +8,7 @@
 #include <map>
 #include <vector>
 #include <memory>
-#include <nlohmann/json.hpp>
+#include "nlohmann_json_include.hpp"
 
 /**
  * @file EventManager.h
@@ -18,15 +18,15 @@ class EventManager {
 private:
     std::map<std::string, std::shared_ptr<Event>> events;
 
-    std::shared_ptr<Event> createEventFromJson(const nlohmann::json& j);
+    static std::shared_ptr<Event> createEventFromJson(const nlohmann::json& j);
 
 public:
     EventManager();
     ~EventManager();
 
-    bool addEvent(std::shared_ptr<Event> event);
+    bool addEvent(const std::shared_ptr<Event>& event);
     bool removeEvent(const std::string& eventId);
-    bool updateEvent(std::shared_ptr<Event> event);
+    bool updateEvent(const std::shared_ptr<Event>& event);
     std::shared_ptr<Event> getEvent(const std::string& eventId) const;
     std::vector<std::shared_ptr<Event>> getAllEvents() const;
 
@@ -52,8 +52,8 @@ public:
     int getEventCountByType(const std::string& type) const;
     std::map<std::string, int> getEventStatistics() const;
 
-    bool validateEvent(const Event& event) const;
-    std::vector<std::string> getValidationErrors(const Event& event) const;
+    static bool validateEvent(const Event& event);
+    static std::vector<std::string> getValidationErrors(const Event& event);
 
     nlohmann::json toJson() const;
     void fromJson(const nlohmann::json& j);

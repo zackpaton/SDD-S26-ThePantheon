@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "name": "sdd-github-repo",
+  "description": "Root devDependencies shared by eslint/google-rules.mjs (Google style without ESLint 9-removed rules).",
+  "devDependencies": {
+    "eslint-config-google": "^0.14.0"
+  }
+}

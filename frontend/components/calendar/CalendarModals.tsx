@@ -1,14 +1,14 @@
-"use client"
+'use client';
 
 /**
  * Add / detail / edit event modals shared by month and week views.
  */
-import AddEventModal from "@/components/AddEventModal"
-import EventDetailsModal from "@/components/EventDetailsModal"
-import EditEventModal from "@/components/EditEventModal"
-import type { CalendarBoardState } from "./useCalendarBoard"
+import AddEventModal from '@/components/AddEventModal';
+import EventDetailsModal from '@/components/EventDetailsModal';
+import EditEventModal from '@/components/EditEventModal';
+import type {CalendarBoardState} from './useCalendarBoard';
 
-export default function CalendarModals({ board }: { board: CalendarBoardState }) {
+export default function CalendarModals({board}: { board: CalendarBoardState }) {
   const {
     userRole,
     userId,
@@ -21,7 +21,7 @@ export default function CalendarModals({ board }: { board: CalendarBoardState })
     showEventDetails,
     setShowEventDetails,
     fetchEvents,
-  } = board
+  } = board;
 
   return (
     <>
@@ -39,13 +39,13 @@ export default function CalendarModals({ board }: { board: CalendarBoardState })
           userId={userId}
           onClose={() => (setSelectedEvent(null), setShowEventDetails(false))}
           onEdit={() => {
-            setShowEditModal(true)
-            setShowEventDetails(false)
+            setShowEditModal(true);
+            setShowEventDetails(false);
           }}
           onDeleted={() => {
-            fetchEvents()
-            setSelectedEvent(null)
-            setShowEventDetails(false)
+            fetchEvents();
+            setSelectedEvent(null);
+            setShowEventDetails(false);
           }}
         />
       )}
@@ -55,17 +55,17 @@ export default function CalendarModals({ board }: { board: CalendarBoardState })
           key={selectedEvent.id}
           event={selectedEvent}
           onClose={() => {
-            setShowEditModal(false)
-            setShowEventDetails(true)
+            setShowEditModal(false);
+            setShowEventDetails(true);
           }}
           onSave={() => {
-            fetchEvents()
-            setShowEditModal(false)
-            setSelectedEvent(null)
-            setShowEventDetails(false)
+            fetchEvents();
+            setShowEditModal(false);
+            setSelectedEvent(null);
+            setShowEventDetails(false);
           }}
         />
       )}
     </>
-  )
+  );
 }

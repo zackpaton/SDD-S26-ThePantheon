@@ -15,6 +15,14 @@
 
 using json = nlohmann::json;
 
+namespace {
+
+void WriteJsonLine(const json& j) {
+    std::cout << j.dump() << '\n';
+}
+
+}  // namespace
+
 EventManager globalManager;
 UserManager globalUserManager;
 EventFeedbackManager globalFeedbackManager;
@@ -22,7 +30,7 @@ EventFeedbackManager globalFeedbackManager;
 /** Writes JSON array of all in-memory events to stdout. */
 void handleGetAllEvents() {
     json result = globalManager.toJson();
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 /** Looks up a single event by id; prints the event JSON or an error object. */
@@ -31,11 +39,11 @@ void handleGetEvent(const json& input) {
     auto event = globalManager.getEvent(id);
     
     if (event) {
-        std::cout << event->toJson().dump() << std::endl;
+        WriteJsonLine(event->toJson());
     } else {
         json error;
         error["error"] = "Event not found";
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
     }
 }
 
@@ -61,17 +69,17 @@ void handleCreateEvent(const json& input) {
             json result;
             result["success"] = true;
             result["event"] = event->toJson();
-            std::cout << result.dump() << std::endl;
+            WriteJsonLine(result);
         } else {
             json error;
             error["error"] = "Failed to add event - validation failed";
-            error["validationErrors"] = globalManager.getValidationErrors(*event);
-            std::cout << error.dump() << std::endl;
+            error["validationErrors"] = EventManager::getValidationErrors(*event);
+            WriteJsonLine(error);
         }
     } catch (const std::exception& e) {
         json error;
         error["error"] = std::string("Exception: ") + e.what();
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
     }
 }
 
@@ -85,7 +93,7 @@ void handleUpdateEvent(const json& input) {
         if (!existingEvent) {
             json error;
             error["error"] = "Event not found";
-            std::cout << error.dump() << std::endl;
+            WriteJsonLine(error);
             return;
         }
 
@@ -94,16 +102,16 @@ void handleUpdateEvent(const json& input) {
             json result;
             result["success"] = true;
             result["event"] = existingEvent->toJson();
-            std::cout << result.dump() << std::endl;
+            WriteJsonLine(result);
         } else {
             json error;
             error["error"] = "Failed to update event";
-            std::cout << error.dump() << std::endl;
+            WriteJsonLine(error);
         }
     } catch (const std::exception& e) {
         json error;
         error["error"] = std::string("Exception: ") + e.what();
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
     }
 }
 
@@ -115,11 +123,11 @@ void handleDeleteEvent(const json& input) {
         globalFeedbackManager.removeEventFeedback(id);
         json result;
         result["success"] = true;
-        std::cout << result.dump() << std::endl;
+        WriteJsonLine(result);
     } else {
         json error;
         error["error"] = "Event not found";
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
     }
 }
 
@@ -128,11 +136,11 @@ void handleGetUser(const json& input) {
     std::string id = input.value("id", "");
     auto user = globalUserManager.getUser(id);
     if (user) {
-        std::cout << user->toJson().dump() << std::endl;
+        WriteJsonLine(user->toJson());
     } else {
         json error;
         error["error"] = "User not found";
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
     }
 }
 
@@ -145,13 +153,13 @@ void handleGetUsersBatch(const json& input) {
         }
     }
     json result = globalUserManager.getUsersBatch(uids);
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 /** JSON array of all users (in-memory). */
 void handleGetAllUsers() {
     json result = globalUserManager.getAllUsersJson();
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 /** Creates or replaces a user from a full profile JSON object (includes id, role). */
@@ -163,16 +171,16 @@ void handleUpsertUser(const json& input) {
             json result;
             result["success"] = true;
             result["user"] = u->toJson();
-            std::cout << result.dump() << std::endl;
+            WriteJsonLine(result);
         } else {
             json error;
             error["error"] = "Failed to upsert user";
-            std::cout << error.dump() << std::endl;
+            WriteJsonLine(error);
         }
     } catch (const std::exception& e) {
         json error;
         error["error"] = std::string("Exception: ") + e.what();
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
     }
 }
 
@@ -182,18 +190,18 @@ void handleLoadUsers(const json& input) {
         if (!input.contains("users") || !input["users"].is_array()) {
             json error;
             error["error"] = "Expected data.users array";
-            std::cout << error.dump() << std::endl;
+            WriteJsonLine(error);
             return;
         }
         globalUserManager.fromJson(input["users"]);
         json result;
         result["success"] = true;
         result["count"] = globalUserManager.getUserCount();
-        std::cout << result.dump() << std::endl;
+        WriteJsonLine(result);
     } catch (const std::exception& e) {
         json error;
         error["error"] = std::string("Exception: ") + e.what();
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
     }
 }
 
@@ -204,11 +212,11 @@ void handleLoadEvents(const json& input) {
         json result;
         result["success"] = true;
         result["count"] = globalManager.getEventCount();
-        std::cout << result.dump() << std::endl;
+        WriteJsonLine(result);
     } catch (const std::exception& e) {
         json error;
         error["error"] = std::string("Exception: ") + e.what();
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
     }
 }
 
@@ -219,11 +227,11 @@ void handleLoadEventFeedback(const json& input) {
         globalFeedbackManager.fromJson(fb);
         json ok;
         ok["success"] = true;
-        std::cout << ok.dump() << std::endl;
+        WriteJsonLine(ok);
     } catch (const std::exception& e) {
         json err;
         err["error"] = std::string("Exception: ") + e.what();
-        std::cout << err.dump() << std::endl;
+        WriteJsonLine(err);
     }
 }
 
@@ -231,7 +239,7 @@ void handleLoadEventFeedback(const json& input) {
 void handleGetEventFeedbackCoordinator(const json& input) {
     std::string eventId = input.value("eventId", "");
     json result = globalFeedbackManager.getCoordinatorView(globalManager, globalUserManager, eventId);
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 /** One guest's feedback row for an event. */
@@ -239,7 +247,7 @@ void handleGetEventFeedbackGuest(const json& input) {
     std::string eventId = input.value("eventId", "");
     std::string userId = input.value("userId", "");
     json result = globalFeedbackManager.getGuestView(globalManager, eventId, userId);
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 /** Upserts feedback after Node validates role/RSVP/event-ended. */
@@ -249,20 +257,20 @@ void handleUpsertEventFeedback(const json& input) {
     std::string vote = input.value("vote", "");
     std::string comment = input.value("comment", "");
     json result = globalFeedbackManager.upsert(globalManager, eventId, userId, vote, comment);
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 
 /** (Reserved) Recruitment-specific handler for adding a PNM to an event. */
 void handleAddPNMToEvent(const json& input) {
     std::string eventId = input["eventId"];
-    std::string pnmId = input["pnmId"];
-    
+    // Reserved: input["pnmId"] when recruitment PNM APIs are implemented.
+
     auto event = globalManager.getEvent(eventId);
     if (!event) {
         json error;
         error["error"] = "Event not found";
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
         return;
     }
     
@@ -270,14 +278,14 @@ void handleAddPNMToEvent(const json& input) {
     if (!recruitEvent) {
         json error;
         error["error"] = "Event is not a recruitment event";
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
         return;
     }
     
     json result;
     result["success"] = true;
     result["event"] = recruitEvent->toJson();
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 
@@ -289,14 +297,14 @@ void handleAddAttendeeToEvent(const json& input) {
     if (!event) {
         json error;
         error["error"] = "Event not found";
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
         return;
     }
     event->addAttendee(attendeeId);
     json result;
     result["success"] = true;
     result["event"] = event->toJson();
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 
@@ -308,7 +316,7 @@ void handleRemoveAttendeeFromEvent(const json& input) {
     if (!event) {
         json error;
         error["error"] = "Event not found";
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
         return;
     }
 
@@ -316,7 +324,7 @@ void handleRemoveAttendeeFromEvent(const json& input) {
     json result;
     result["success"] = true;
     result["event"] = event->toJson();
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 /** Enables or disables reminder notifications for one attendee on an event. */
@@ -329,7 +337,7 @@ void handleToggleNotification(const json& input) {
     if (!event) {
         json error;
         error["error"] = "Event not found";
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
         return;
     }
 
@@ -337,7 +345,7 @@ void handleToggleNotification(const json& input) {
     json result;
     result["success"] = true;
     result["event"] = event->toJson();
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 
@@ -349,7 +357,7 @@ void handleNotificationSent(const json& input) {
     if (!event) {
         json error;
         error["error"] = "Event not found";
-        std::cout << error.dump() << std::endl;
+        WriteJsonLine(error);
         return;
     }
 
@@ -357,7 +365,7 @@ void handleNotificationSent(const json& input) {
     json result;
     result["success"] = true;
     result["event"] = event->toJson();
-    std::cout << result.dump() << std::endl;
+    WriteJsonLine(result);
 }
 
 
@@ -413,13 +421,13 @@ int main() {
             } else {
                 json error;
                 error["error"] = "Unknown command: " + command;
-                std::cout << error.dump() << std::endl;
+                WriteJsonLine(error);
             }
 
         } catch (const std::exception& e) {
             json error;
             error["error"] = std::string("Exception: ") + e.what();
-            std::cout << error.dump() << std::endl;
+            WriteJsonLine(error);
         }
 
         std::cout.flush();

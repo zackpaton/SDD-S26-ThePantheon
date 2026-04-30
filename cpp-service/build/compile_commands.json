@@ -1,0 +1,68 @@
+[
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/Event.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/Event.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/Event.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/Event.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/RecruitmentEvent.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/RecruitmentEvent.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/RecruitmentEvent.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/RecruitmentEvent.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/PhilanthropyEvent.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/PhilanthropyEvent.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/PhilanthropyEvent.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/PhilanthropyEvent.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/SocialEvent.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/SocialEvent.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/SocialEvent.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/SocialEvent.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/EventManager.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/EventManager.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/EventManager.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/EventManager.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/User.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/User.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/User.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/User.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/GuestUser.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/GuestUser.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/GuestUser.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/GuestUser.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/EventCoordinator.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/EventCoordinator.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/EventCoordinator.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/EventCoordinator.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/UserManager.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/UserManager.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/UserManager.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/UserManager.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/EventFeedbackManager.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/EventFeedbackManager.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/EventFeedbackManager.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/EventFeedbackManager.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build",
+  "command": "/usr/bin/c++  -I\"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/include\" -isystem \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-src/include\" -std=gnu++17 -Wall -Wextra -Wpedantic -o CMakeFiles/calendar_service.dir/src/main.cpp.o -c \"/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/main.cpp\"",
+  "file": "/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/src/main.cpp",
+  "output": "CMakeFiles/calendar_service.dir/src/main.cpp.o"
+}
+]

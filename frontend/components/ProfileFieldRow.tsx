@@ -1,4 +1,6 @@
-/** Single labeled row for read-only profile displays (empty values show N/A). */
+/**
+ * Single labeled row for read-only profile displays (empty values show N/A).
+ */
 export default function ProfileFieldRow({
   label,
   value,
@@ -6,7 +8,7 @@ export default function ProfileFieldRow({
   label: string
   value?: string | number | null
 }) {
-  const empty = value === undefined || value === null || value === ""
+  const empty = value === undefined || value === null || value === '';
   return (
     <div className="text-sm">
       <span className="font-semibold">{label}: </span>
@@ -16,5 +18,5 @@ export default function ProfileFieldRow({
         <span>{String(value)}</span>
       )}
     </div>
-  )
+  );
 }

@@ -1,5 +1,6 @@
 /**
- * Firebase Admin initialization: loads service account credentials and exports the Realtime Database handle.
+ * Firebase Admin: loads service account credentials and exports the Realtime
+ * Database handle.
  */
 const admin = require('firebase-admin');
 const serviceAccount = require('../serviceAccountKey.json');
@@ -11,4 +12,4 @@ admin.initializeApp({
 
 const db = admin.database();
 
-module.exports = { admin, db };
+module.exports = {admin, db};

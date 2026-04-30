@@ -1,16 +1,17 @@
 /**
- * HTTP server entry point: Express API for users, events, notifications, and chats;
- * proxies calendar logic to the C++ child process; serves the Next.js frontend for non-API routes.
+ * HTTP server entry point: Express API for users, events, notifications, and
+ * chats; proxies calendar logic to the C++ child process; serves the Next.js
+ * frontend for non-API routes.
  */
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({path: path.join(__dirname, '.env')});
 
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const next = require('next');
 
-const { admin, db } = require('./lib/firebase');
-const { createTransporter } = require('./lib/email');
+const {admin, db} = require('./lib/firebase');
+const {createTransporter} = require('./lib/email');
 const {
   callCppService,
   convertEventDates,
@@ -18,7 +19,7 @@ const {
   loadEventsToCppService,
   loadEventFeedbackToCppService,
 } = require('./lib/cppClient');
-const { authenticate } = require('./lib/authenticate');
+const {authenticate} = require('./lib/authenticate');
 const createUsersRouter = require('./routes/users');
 const createEventsRouter = require('./routes/events');
 const createNotificationsRouter = require('./routes/notifications');
@@ -28,7 +29,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 const dev = process.env.NODE_ENV !== 'production';
-const nextApp = next({ dev, dir: path.join(__dirname, '../frontend') });
+const nextApp = next({dev, dir: path.join(__dirname, '../frontend')});
 const handle = nextApp.getRequestHandler();
 
 const transporter = createTransporter();
@@ -37,27 +38,27 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'fraternity-calendar-api' });
+  res.json({status: 'ok', service: 'fraternity-calendar-api'});
 });
 
-app.use('/api/users', createUsersRouter({ db, authenticate, callCppService }));
-app.use('/api/chats', createChatsRouter({ db, authenticate, admin }));
+app.use('/api/users', createUsersRouter({db, authenticate, callCppService}));
+app.use('/api/chats', createChatsRouter({db, authenticate, admin}));
 app.use(
-  '/api/events',
-  createEventsRouter({
-    db,
-    authenticate,
-    callCppService,
-    convertEventDates,
-  }),
+    '/api/events',
+    createEventsRouter({
+      db,
+      authenticate,
+      callCppService,
+      convertEventDates,
+    }),
 );
 app.use(
-  '/api/notifications',
-  createNotificationsRouter({
-    db,
-    callCppService,
-    transporter,
-  }),
+    '/api/notifications',
+    createNotificationsRouter({
+      db,
+      callCppService,
+      transporter,
+    }),
 );
 
 nextApp.prepare().then(() => {

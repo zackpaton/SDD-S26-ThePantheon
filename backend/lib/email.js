@@ -1,9 +1,13 @@
 /**
- * Email transport factory for sending Gmail messages (e.g. event reminder notifications).
+ * Email transport factory for sending Gmail messages (e.g. event reminder
+ * notifications).
  */
 const nodemailer = require('nodemailer');
 
-/** Builds a nodemailer transporter using EMAIL_USER / EMAIL_PASS from the environment. */
+/**
+ * Builds a nodemailer transporter using EMAIL_USER / EMAIL_PASS from the
+ * environment.
+ */
 function createTransporter() {
   return nodemailer.createTransport({
     service: 'gmail',
@@ -14,4 +18,4 @@ function createTransporter() {
   });
 }
 
-module.exports = { createTransporter };
+module.exports = {createTransporter};

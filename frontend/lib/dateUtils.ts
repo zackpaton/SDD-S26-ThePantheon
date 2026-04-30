@@ -1,54 +1,65 @@
 /**
- * Calendar grid helper: builds a month view as rows of seven days (Sunday–Saturday), including leading/trailing days from adjacent months.
+ * Calendar grid helper: builds a month view as rows of seven days
+ * (Sunday–Saturday), including leading/trailing days from adjacent months.
  */
 export function generateMonthMatrix(date: Date): Date[][] {
-  const year = date.getFullYear()
-  const month = date.getMonth()
+  const year = date.getFullYear();
+  const month = date.getMonth();
 
-  const firstDayOfMonth = new Date(year, month, 1)
-  const startDay = firstDayOfMonth.getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const totalCells = startDay + daysInMonth
-  const numberOfWeeks = Math.ceil(totalCells / 7)
+  const firstDayOfMonth = new Date(year, month, 1);
+  const startDay = firstDayOfMonth.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const totalCells = startDay + daysInMonth;
+  const numberOfWeeks = Math.ceil(totalCells / 7);
 
-  const matrix: Date[][] = []
+  const matrix: Date[][] = [];
 
-  let currentDay = 1 - startDay
+  let currentDay = 1 - startDay;
 
   for (let week = 0; week < numberOfWeeks; week++) {
-    const weekRow: Date[] = []
+    const weekRow: Date[] = [];
 
     for (let day = 0; day < 7; day++) {
-      weekRow.push(new Date(year, month, currentDay))
-      currentDay++
+      weekRow.push(new Date(year, month, currentDay));
+      currentDay++;
     }
 
-    matrix.push(weekRow)
+    matrix.push(weekRow);
   }
 
-  return matrix
+  return matrix;
 }
 
 /**
- * Returns seven Date objects (Sunday → Saturday) for the week that contains `anchor`.
+ * Returns seven Date objects (Sunday → Saturday) for the week that contains
+ * `anchor`.
  */
 export function getWeekDaysContaining(anchor: Date): Date[] {
-  const d = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate())
-  const dow = d.getDay()
-  d.setDate(d.getDate() - dow)
-  const days: Date[] = []
+  const d = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate());
+  const dow = d.getDay();
+  d.setDate(d.getDate() - dow);
+  const days: Date[] = [];
   for (let i = 0; i < 7; i++) {
-    days.push(new Date(d.getFullYear(), d.getMonth(), d.getDate() + i))
+    days.push(new Date(d.getFullYear(), d.getMonth(), d.getDate() + i));
   }
-  return days
+  return days;
 }
 
 /**
  * Formats a week range like "Mar 9 – 15, 2025" (uses local timezone).
  */
 export function formatWeekRangeLabel(weekDays: Date[]): string {
-  if (weekDays.length < 7) return ""
-  const start = weekDays[0]
-  const end = weekDays[6]
-  return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+  if (weekDays.length < 7) return '';
+  const start = weekDays[0];
+  const end = weekDays[6];
+  const startLabel = start.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+  const endLabel = end.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  return `${startLabel} – ${endLabel}`;
 }

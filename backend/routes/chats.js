@@ -1,8 +1,10 @@
 /**
- * Direct (1:1) chat API: lookup by email via Firebase Auth, open threads in Realtime Database, send messages.
- * Chat bodies live under `directChats/{chatId}`; per-user inbox under `userConversations/{uid}/{chatId}`.
+ * Direct (1:1) chat API: lookup by email via Firebase Auth, open threads in
+ * Realtime Database, send messages. Bodies live under `directChats/{chatId}`;
+ * inbox under `userConversations/{uid}/{chatId}`.
  */
 const express = require('express');
+const {Router: createExpressRouter} = express;
 
 const MAX_MESSAGE_LEN = 4000;
 
@@ -45,15 +47,20 @@ function previewText(text) {
 }
 
 /** Express router mounted at /api/chats. */
-function createChatsRouter({ db, authenticate, admin }) {
-  const router = express.Router();
+function createChatsRouter({db, authenticate, admin}) {
+  const router = createExpressRouter();
 
-  /** Find a registered user by email (Firebase Auth) and return public profile fields. */
+  /**
+   * Find a registered user by email (Firebase Auth) and return public profile
+   * fields.
+   */
   router.get('/lookup', authenticate, async (req, res) => {
     try {
       const email = normalizeEmail(req.query.email);
       if (!email) {
-        return res.status(400).json({ error: 'email query parameter is required' });
+        return res.status(400).json({
+          error: 'email query parameter is required',
+        });
       }
 
       let peerAuth;
@@ -61,19 +68,25 @@ function createChatsRouter({ db, authenticate, admin }) {
         peerAuth = await admin.auth().getUserByEmail(email);
       } catch (e) {
         if (e.code === 'auth/user-not-found') {
-          return res.status(404).json({ error: 'No user with that email' });
+          return res.status(404).json({error: 'No user with that email'});
         }
         throw e;
       }
 
       if (peerAuth.uid === req.user.uid) {
-        return res.status(400).json({ error: 'You cannot start a chat with yourself' });
+        return res.status(400).json({
+          error: 'You cannot start a chat with yourself',
+        });
       }
 
       const snap = await db.ref(`users/${peerAuth.uid}`).once('value');
       const p = snap.val() || {};
-      const displayName =
-        [p.firstName, p.lastName].filter(Boolean).join(' ').trim() || p.email || 'User';
+      const displayName = [p.firstName, p.lastName]
+          .filter(Boolean)
+          .join(' ')
+          .trim() ||
+        p.email ||
+        'User';
 
       res.json({
         uid: peerAuth.uid,
@@ -85,26 +98,28 @@ function createChatsRouter({ db, authenticate, admin }) {
       });
     } catch (err) {
       console.error('chat lookup:', err);
-      res.status(500).json({ error: 'Lookup failed' });
+      res.status(500).json({error: 'Lookup failed'});
     }
   });
 
-  /** Create or return an existing direct chat with `peerUid` and sync inbox rows. */
+  /**
+   * Create or return an existing direct chat with peerUid; sync inbox rows.
+   */
   router.post('/open', authenticate, async (req, res) => {
     try {
-      const { peerUid } = req.body || {};
+      const {peerUid} = req.body || {};
       if (!peerUid || typeof peerUid !== 'string') {
-        return res.status(400).json({ error: 'peerUid is required' });
+        return res.status(400).json({error: 'peerUid is required'});
       }
       if (peerUid === req.user.uid) {
-        return res.status(400).json({ error: 'Invalid peer' });
+        return res.status(400).json({error: 'Invalid peer'});
       }
 
       try {
         await admin.auth().getUser(peerUid);
       } catch (e) {
         if (e.code === 'auth/user-not-found') {
-          return res.status(404).json({ error: 'User not found' });
+          return res.status(404).json({error: 'User not found'});
         }
         throw e;
       }
@@ -121,7 +136,7 @@ function createChatsRouter({ db, authenticate, admin }) {
 
       if (isNew) {
         await metaRef.set({
-          participants: { [uid]: true, [peerUid]: true },
+          participants: {[uid]: true, [peerUid]: true},
           updatedAt: now,
           lastMessageText: '',
           lastMessageSenderId: null,
@@ -146,11 +161,19 @@ function createChatsRouter({ db, authenticate, admin }) {
       };
 
       await db.ref(`userConversations/${uid}/${chatId}`).update(
-        inboxFor({ uid: peerUid, displayName: peerMeta.displayName, email: peerMeta.email }),
+          inboxFor({
+            uid: peerUid,
+            displayName: peerMeta.displayName,
+            email: peerMeta.email,
+          }),
       );
 
       await db.ref(`userConversations/${peerUid}/${chatId}`).update(
-        inboxFor({ uid, displayName: selfMeta.displayName, email: selfMeta.email }),
+          inboxFor({
+            uid,
+            displayName: selfMeta.displayName,
+            email: selfMeta.email,
+          }),
       );
 
       res.json({
@@ -163,20 +186,22 @@ function createChatsRouter({ db, authenticate, admin }) {
       });
     } catch (err) {
       console.error('chat open:', err);
-      res.status(500).json({ error: 'Failed to open chat' });
+      res.status(500).json({error: 'Failed to open chat'});
     }
   });
 
   /** List the current user's conversations (newest activity first). */
   router.get('/', authenticate, async (req, res) => {
     try {
-      const snap = await db.ref(`userConversations/${req.user.uid}`).once('value');
+      const snap = await db
+          .ref(`userConversations/${req.user.uid}`)
+          .once('value');
       const val = snap.val() || {};
       const rows = Object.entries(val).map(([chatId, row]) => {
         if (!row || typeof row !== 'object') {
           return null;
         }
-        return { chatId, ...row };
+        return {chatId, ...row};
       }).filter(Boolean);
 
       for (const row of rows) {
@@ -188,19 +213,22 @@ function createChatsRouter({ db, authenticate, admin }) {
       }
 
       rows.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-      res.json({ conversations: rows });
+      res.json({conversations: rows});
     } catch (err) {
       console.error('chat list:', err);
-      res.status(500).json({ error: 'Failed to list chats' });
+      res.status(500).json({error: 'Failed to list chats'});
     }
   });
 
-  /** Load full message history for a chat (polling fallback if the client has no RTDB listener). */
+  /**
+   * Load full message history for a chat (polling fallback when the client has
+   * no RTDB listener).
+   */
   router.get('/:chatId/messages', authenticate, async (req, res) => {
     try {
-      const { chatId } = req.params;
+      const {chatId} = req.params;
       if (!isParticipant(chatId, req.user.uid)) {
-        return res.status(403).json({ error: 'Not a participant in this chat' });
+        return res.status(403).json({error: 'Not a participant in this chat'});
       }
       const snap = await db.ref(`directChats/${chatId}/messages`).once('value');
       const val = snap.val() || {};
@@ -209,35 +237,38 @@ function createChatsRouter({ db, authenticate, admin }) {
         ...(typeof m === 'object' && m ? m : {}),
       }));
       messages.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-      res.json({ messages });
+      res.json({messages});
     } catch (err) {
       console.error('chat get messages:', err);
-      res.status(500).json({ error: 'Failed to load messages' });
+      res.status(500).json({error: 'Failed to load messages'});
     }
   });
 
   /** Append a message to a direct chat (C++ service not used). */
   router.post('/:chatId/messages', authenticate, async (req, res) => {
     try {
-      const { chatId } = req.params;
+      const {chatId} = req.params;
       const uid = req.user.uid;
 
       if (!isParticipant(chatId, uid)) {
-        return res.status(403).json({ error: 'Not a participant in this chat' });
+        return res.status(403).json({error: 'Not a participant in this chat'});
       }
 
-      const textRaw = req.body && typeof req.body.text === 'string' ? req.body.text : '';
+      const textRaw =
+        req.body && typeof req.body.text === 'string' ? req.body.text : '';
       const text = textRaw.trim();
       if (!text) {
-        return res.status(400).json({ error: 'Message cannot be empty' });
+        return res.status(400).json({error: 'Message cannot be empty'});
       }
       if (text.length > MAX_MESSAGE_LEN) {
-        return res.status(400).json({ error: `Message must be at most ${MAX_MESSAGE_LEN} characters` });
+        return res.status(400).json({
+          error: `Message must be at most ${MAX_MESSAGE_LEN} characters`,
+        });
       }
 
       const metaSnap = await db.ref(`directChats/${chatId}/meta`).once('value');
       if (!metaSnap.exists()) {
-        return res.status(404).json({ error: 'Chat not found' });
+        return res.status(404).json({error: 'Chat not found'});
       }
 
       const now = Date.now();
@@ -258,7 +289,7 @@ function createChatsRouter({ db, authenticate, admin }) {
 
       const parts = parseChatId(chatId);
       if (!parts) {
-        return res.status(400).json({ error: 'Invalid chat id' });
+        return res.status(400).json({error: 'Invalid chat id'});
       }
       const [a, b] = parts;
 
@@ -280,7 +311,7 @@ function createChatsRouter({ db, authenticate, admin }) {
       });
     } catch (err) {
       console.error('chat message:', err);
-      res.status(500).json({ error: 'Failed to send message' });
+      res.status(500).json({error: 'Failed to send message'});
     }
   });
 

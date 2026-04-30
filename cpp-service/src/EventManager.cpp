@@ -34,7 +34,7 @@ std::shared_ptr<Event> EventManager::createEventFromJson(const json& j) {
     return event;
 }
 
-bool EventManager::addEvent(std::shared_ptr<Event> event) {
+bool EventManager::addEvent(const std::shared_ptr<Event>& event) {
     if (!event || !event->isValid()) {
         return false;
     }
@@ -47,7 +47,7 @@ bool EventManager::removeEvent(const std::string& eventId) {
     return events.erase(eventId) > 0;
 }
 
-bool EventManager::updateEvent(std::shared_ptr<Event> event) {
+bool EventManager::updateEvent(const std::shared_ptr<Event>& event) {
     if (!event || !event->isValid()) {
         return false;
     }
@@ -71,6 +71,7 @@ std::shared_ptr<Event> EventManager::getEvent(const std::string& eventId) const 
 
 std::vector<std::shared_ptr<Event>> EventManager::getAllEvents() const {
     std::vector<std::shared_ptr<Event>> result;
+    result.reserve(events.size());
     for (const auto& pair : events) {
         result.push_back(pair.second);
     }
@@ -248,7 +249,7 @@ int EventManager::getEventCountByType(const std::string& type) const {
 
 std::map<std::string, int> EventManager::getEventStatistics() const {
     std::map<std::string, int> stats;
-    stats["Total"] = events.size();
+    stats["Total"] = static_cast<int>(events.size());
     stats["Recruitment"] = getEventCountByType("Recruitment");
     stats["Philanthropy"] = getEventCountByType("Philanthropy");
     stats["Social"] = getEventCountByType("Social");
@@ -256,11 +257,11 @@ std::map<std::string, int> EventManager::getEventStatistics() const {
     return stats;
 }
 
-bool EventManager::validateEvent(const Event& event) const {
+bool EventManager::validateEvent(const Event& event) {
     return event.isValid();
 }
 
-std::vector<std::string> EventManager::getValidationErrors(const Event& event) const {
+std::vector<std::string> EventManager::getValidationErrors(const Event& event) {
     std::vector<std::string> errors;
     
     if (event.getId().empty()) {
@@ -294,7 +295,7 @@ void EventManager::fromJson(const json& j) {
     clear();
     if (j.is_array()) {
         for (const auto& eventJson : j) {
-            auto event = createEventFromJson(eventJson);
+            auto event = EventManager::createEventFromJson(eventJson);
 
             if (event && event->isValid()) {
                 events[event->getId()] = event;
