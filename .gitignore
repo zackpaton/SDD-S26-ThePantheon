@@ -48,6 +48,5 @@ backend/serviceAccountKey.json
 backend/seed-database.js
 
 
-cpp-service/build/cmake_install.cmake
-cpp-service/build/CMakeCache.txt
-cpp-service/build/CMakeFiles/*
+# CMake outputs — never commit binaries (GLIBC mismatch across machines / Render).
+cpp-service/build/
