@@ -1,0 +1,77 @@
+{
+  "events": {
+    "event_1777501001001_mock_a7k2n9x": {
+      "coordinatorId": "mockCoord_user_alpha_01",
+      "date": "2026-05-10T00:00:00-04:00",
+      "description": "Mock study session with snacks for finals prep.",
+      "endTime": "2026-05-10T22:00:00-04:00",
+      "eventType": "Other",
+      "fraternity": "Acacia",
+      "id": "event_1777501001001_mock_a7k2n9x",
+      "location": "Folsom Library — Group Study 3",
+      "startTime": "2026-05-10T18:00:00-04:00",
+      "title": "Mock Finals Study Block"
+    },
+    "event_1777501001002_mock_b3m8pqw": {
+      "beneficiary": "American Red Cross",
+      "coordinatorId": "mockCoord_user_beta_02",
+      "date": "2026-05-14T00:00:00-04:00",
+      "description": "Mock blood drive signup table and awareness tabling.",
+      "endTime": "2026-05-14T17:00:00-04:00",
+      "eventType": "Philanthropy",
+      "fraternity": "Theta Xi",
+      "fundraisingGoal": 0,
+      "id": "event_1777501001002_mock_b3m8pqw",
+      "location": "Student Union — Main Lobby",
+      "startTime": "2026-05-14T11:00:00-04:00",
+      "title": "Mock Community Blood Drive Drive"
+    },
+    "event_1777501001003_mock_c9r5tvl": {
+      "attendeeIds": [
+        "mockAttendee_uid_001",
+        "mockAttendee_uid_002"
+      ],
+      "coordinatorId": "mockCoord_user_gamma_03",
+      "date": "2026-05-17T00:00:00-04:00",
+      "description": "Mock outdoor mixer with lawn games (non-alcoholic mocktails).",
+      "endTime": "2026-05-17T21:30:00-04:00",
+      "eventType": "Social",
+      "fraternity": "Sigma Chi",
+      "hasAlcohol": false,
+      "id": "event_1777501001003_mock_c9r5tvl",
+      "isFormal": false,
+      "location": "Sigma Chi — Back Lawn",
+      "maxCapacity": 40,
+      "startTime": "2026-05-17T17:00:00-04:00",
+      "title": "Mock Spring Lawn Social"
+    },
+    "event_1777501001004_mock_d2j6hyk": {
+      "coordinatorId": "mockCoord_user_delta_04",
+      "date": "2026-05-20T00:00:00-04:00",
+      "description": "Mock house tour and Q&A for prospective members.",
+      "endTime": "2026-05-20T20:00:00-04:00",
+      "eventType": "Recruitment",
+      "fraternity": "Delta Kappa Epsilon",
+      "id": "event_1777501001004_mock_d2j6hyk",
+      "isFormalRush": true,
+      "location": "DKE Chapter House",
+      "startTime": "2026-05-20T18:00:00-04:00",
+      "title": "Mock Formal Open House"
+    },
+    "event_1777501001005_mock_e4w1szn": {
+      "coordinatorId": "mockCoord_user_epsilon_05",
+      "date": "2026-05-24T00:00:00-04:00",
+      "description": "",
+      "endTime": "2026-05-24T15:00:00-04:00",
+      "eventType": "Social",
+      "fraternity": "Sigma Alpha Epsilon",
+      "hasAlcohol": false,
+      "id": "event_1777501001005_mock_e4w1szn",
+      "isFormal": true,
+      "location": "Rensselaer Union — Great Hall",
+      "maxCapacity": 120,
+      "startTime": "2026-05-24T12:00:00-04:00",
+      "title": "Mock Composite Photo Brunch"
+    }
+  }
+}
