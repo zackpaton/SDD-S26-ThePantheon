@@ -46,8 +46,3 @@ backend/node_modules
 backend/.env
 backend/serviceAccountKey.json
 backend/seed-database.js
-
-
-# CMake outputs — keep only the Linux ELF committed for Render (see build-for-render.sh).
-cpp-service/build/*
-!cpp-service/build/calendar_service

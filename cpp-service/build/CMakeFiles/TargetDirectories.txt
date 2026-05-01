@@ -1,0 +1,6 @@
+/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/CMakeFiles/calendar_service.dir
+/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/CMakeFiles/clang-tidy.dir
+/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/CMakeFiles/rebuild_cache.dir
+/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/Zachary Paton/Documents/SDD/GitHubRepo/cpp-service/build/_deps/nlohmann_json-build/CMakeFiles/rebuild_cache.dir
