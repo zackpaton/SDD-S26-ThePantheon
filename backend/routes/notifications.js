@@ -1,12 +1,17 @@
 /**
  * Notification cron endpoint: finds upcoming events and emails users who
  * opted in.
+ *
+ * Design pattern — Facade: GET /send exposes one HTTP entry point over the
+ * reminder subsystem (C++ calendar via callCppService, Firebase writes,
+ * nodemailer). Cron callers need not coordinate those pieces individually.
  */
 const express = require('express');
 const {Router: createExpressRouter} = express;
 
 /**
- * Router for /api/notifications — GET /send for the scheduled reminder job.
+ * Router for /api/notifications — GET /send implements the Facade described
+ * above (scheduled reminder job).
  */
 function createNotificationsRouter({db, callCppService, transporter}) {
   const router = createExpressRouter();
